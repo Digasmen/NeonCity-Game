@@ -49,16 +49,15 @@ public class BuildingPlacer : MonoBehaviour
     {
         if (!GridManager.Instance.IsCellFree(cell.x, cell.y)) return;
 
-        if (preview != null)
-        {
-            SetPreviewAlpha(preview, 1f);
-            preview = null;
-        }
-        else
-        {
-            GameObject placed = new GameObject(currentData.buildingName);
-            placed.transform.position = GridManager.Instance.GetWorldPosition(cell.x, cell.y);
-        }
+        if (preview != null) { Destroy(preview); preview = null; }
+
+        Vector3 worldPos = GridManager.Instance.GetWorldPosition(cell.x, cell.y);
+        GameObject placed = Instantiate(currentData.prefab, worldPos, Quaternion.identity);
+        placed.name = currentData.buildingName;
+
+        Building building = placed.GetComponent<Building>();
+        if (building == null) building = placed.AddComponent<Building>();
+        building.Initialize(currentData);
 
         GridManager.Instance.SetOccupied(cell.x, cell.y, true);
         isPlacing = false;

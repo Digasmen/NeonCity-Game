@@ -9,4 +9,5 @@ public class BuildingData : ScriptableObject
     public int height = 1;
     public int scrapCost = 100;
     public Sprite icon;
+    public DroneData droneData;
 }
