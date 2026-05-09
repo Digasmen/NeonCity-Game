@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 373869dafb09ec74cbd54015ea70662b, type: 3}
+  m_Name: Polymer Extractor
+  m_EditorClassIdentifier: 
+  buildingName: Polymer Extractor
+  prefab: {fileID: 6979394070350172932, guid: 2c60f824974c11742995f4b82ff4e036, type: 3}
+  width: 1
+  height: 1
+  scrapCost: 200
+  icon: {fileID: 0}
+  droneData: {fileID: 11400000, guid: 70b31dd9b85b1f842ba5463ae3c1120b, type: 2}
+  passiveResourceType: 0
+  passiveRatePerMinute: 0

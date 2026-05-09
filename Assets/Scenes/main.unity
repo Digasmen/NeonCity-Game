@@ -463,6 +463,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &597804060
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 597804062}
+  - component: {fileID: 597804061}
+  m_Layer: 0
+  m_Name: PolymerNode
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &597804061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 597804060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 311bcab9b928ab847936f5ee654efd42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  resourceType: 2
+--- !u!4 &597804062
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 597804060}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 15, y: 0, z: 15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &819338214
 GameObject:
   m_ObjectHideFlags: 0
@@ -1078,6 +1123,8 @@ MonoBehaviour:
   milestones:
   - {fileID: 11400000, guid: 084bd842e9c255f4a9b185a21cb2764e, type: 2}
   - {fileID: 11400000, guid: 557c0b150fcf05144ad91e8378bf9f62, type: 2}
+  - {fileID: 11400000, guid: 090836fd8d7d2b24f9e8c2a9f1398107, type: 2}
+  - {fileID: 11400000, guid: 85099fb13cf4c2442a0121a0d2079c60, type: 2}
 --- !u!114 &1321111365
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1105,6 +1152,8 @@ MonoBehaviour:
   allBuildings:
   - {fileID: 11400000, guid: 6da73e148d467684cbdf841f322dc96c, type: 2}
   - {fileID: 11400000, guid: 096083afb7b300a4e854f67867831719, type: 2}
+  - {fileID: 11400000, guid: fb060c21cd2ac384e81b9636377ef6e5, type: 2}
+  - {fileID: 11400000, guid: 46b2c5fb9ba3061458fb1df5befb82c0, type: 2}
 --- !u!1 &1441981948
 GameObject:
   m_ObjectHideFlags: 0
@@ -2002,3 +2051,4 @@ SceneRoots:
   - {fileID: 1777919256}
   - {fileID: 1441981950}
   - {fileID: 119443669}
+  - {fileID: 597804062}
