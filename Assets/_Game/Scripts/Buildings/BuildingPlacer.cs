@@ -70,6 +70,21 @@ public class BuildingPlacer : MonoBehaviour
         currentData = null;
     }
 
+    public void PlaceDirectly(BuildingData data, Vector2Int cell)
+    {
+        if (!GridManager.Instance.IsCellFree(cell.x, cell.y)) return;
+
+        Vector3 worldPos = GridManager.Instance.GetWorldPosition(cell.x, cell.y);
+        GameObject placed = Instantiate(data.prefab, worldPos, Quaternion.identity);
+        placed.name = data.buildingName;
+
+        Building building = placed.GetComponent<Building>();
+        if (building == null) building = placed.AddComponent<Building>();
+        building.Initialize(data);
+
+        GridManager.Instance.SetOccupied(cell.x, cell.y, true);
+    }
+
     void CancelPlacement()
     {
         if (preview != null) Destroy(preview);

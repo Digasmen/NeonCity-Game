@@ -63,6 +63,12 @@ public class ResourceManager : MonoBehaviour
         return true;
     }
 
+    public void SetAmount(ResourceType type, float amount)
+    {
+        var r = GetResource(type);
+        if (r != null) r.amount = Mathf.Clamp(amount, 0, r.maxAmount);
+    }
+
     public void Add(ResourceType type, float amount)
     {
         var r = GetResource(type);

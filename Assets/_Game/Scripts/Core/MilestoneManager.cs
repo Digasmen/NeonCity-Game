@@ -10,6 +10,7 @@ public class MilestoneManager : MonoBehaviour
 
     private int currentIndex = 0;
 
+    public int CurrentIndex => currentIndex;
     public MilestoneData Current => currentIndex < milestones.Count ? milestones[currentIndex] : null;
     public event Action<MilestoneData> OnMilestoneCompleted;
     public event Action<MilestoneData> OnMilestoneChanged;
@@ -37,6 +38,16 @@ public class MilestoneManager : MonoBehaviour
     {
         if (Current == null) return 1f;
         return Mathf.Clamp01(ResourceManager.Instance.Get(Current.resourceType) / Current.targetAmount);
+    }
+
+    public void LoadFromIndex(int index)
+    {
+        currentIndex = Mathf.Clamp(index, 0, milestones.Count);
+        // Silently unlock all buildings from completed milestones
+        for (int i = 0; i < currentIndex; i++)
+            if (milestones[i].buildingToUnlock != null)
+                BuildMenuUI.Instance.UnlockBuilding(milestones[i].buildingToUnlock);
+        OnMilestoneChanged?.Invoke(Current);
     }
 
     void CompleteCurrent()
