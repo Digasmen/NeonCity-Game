@@ -8,4 +8,5 @@ public class DroneData : ScriptableObject
     public float carryCapacity = 20f;
     public ResourceType resourceType = ResourceType.Scrap;
     public GameObject prefab;
+    public Color glowColor = new Color(0.3f, 0.8f, 1f);
 }

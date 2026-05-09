@@ -41,6 +41,9 @@ public class Building : MonoBehaviour
         droneObj.name = "Drone_" + data.buildingName;
         spawnedDrone = droneObj;
 
+        DroneVisuals visuals = droneObj.AddComponent<DroneVisuals>();
+        visuals.glowColor = data.droneData.glowColor;
+
         Drone drone = droneObj.AddComponent<Drone>();
         drone.data = data.droneData;
 
