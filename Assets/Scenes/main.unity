@@ -858,6 +858,50 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1 &1201453531
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1201453532}
+  - component: {fileID: 1201453533}
+  m_Layer: 0
+  m_Name: ObjectivesUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1201453532
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1201453531}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1321111363}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1201453533
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1201453531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29d8d5058c74c4f4686870251a419077, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1321111361
 GameObject:
   m_ObjectHideFlags: 0
@@ -868,6 +912,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1321111363}
   - component: {fileID: 1321111362}
+  - component: {fileID: 1321111364}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -904,8 +949,24 @@ Transform:
   - {fileID: 823773201}
   - {fileID: 851254092}
   - {fileID: 1756978898}
+  - {fileID: 1201453532}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1321111364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1321111361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1985afdc213734e4f90b6505f364ea6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  milestones:
+  - {fileID: 11400000, guid: 084bd842e9c255f4a9b185a21cb2764e, type: 2}
+  - {fileID: 11400000, guid: 557c0b150fcf05144ad91e8378bf9f62, type: 2}
 --- !u!1 &1441981948
 GameObject:
   m_ObjectHideFlags: 0
@@ -937,7 +998,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   availableBuildings:
   - {fileID: 11400000, guid: 6da73e148d467684cbdf841f322dc96c, type: 2}
-  - {fileID: 11400000, guid: 096083afb7b300a4e854f67867831719, type: 2}
 --- !u!4 &1441981950
 Transform:
   m_ObjectHideFlags: 0

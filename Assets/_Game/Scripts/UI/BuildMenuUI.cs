@@ -5,11 +5,15 @@ using System.Collections.Generic;
 
 public class BuildMenuUI : MonoBehaviour
 {
+    public static BuildMenuUI Instance { get; private set; }
+
     [Header("Buildings to show in menu")]
     public List<BuildingData> availableBuildings;
 
     private GameObject menuPanel;
     private bool isOpen = false;
+
+    void Awake() { Instance = this; }
 
     private List<(BuildingData data, Image cardImage, TextMeshProUGUI costText)> cards = new();
 
@@ -167,5 +171,12 @@ public class BuildMenuUI : MonoBehaviour
     {
         isOpen = false;
         menuPanel.SetActive(false);
+    }
+
+    public void UnlockBuilding(BuildingData data)
+    {
+        if (availableBuildings.Contains(data)) return;
+        availableBuildings.Add(data);
+        CreateBuildingCard(data);
     }
 }
