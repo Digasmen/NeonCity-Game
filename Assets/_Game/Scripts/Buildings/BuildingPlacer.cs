@@ -48,6 +48,7 @@ public class BuildingPlacer : MonoBehaviour
     void TryPlace(Vector2Int cell)
     {
         if (!GridManager.Instance.IsCellFree(cell.x, cell.y)) return;
+        if (!FogManager.Instance.IsCellRevealed(cell.x, cell.y)) return;
         if (!ResourceManager.Instance.CanAfford(ResourceType.Scrap, currentData.scrapCost))
         {
             Debug.Log($"Not enough Scrap. Need {currentData.scrapCost}.");
@@ -66,6 +67,7 @@ public class BuildingPlacer : MonoBehaviour
         building.Initialize(currentData);
 
         GridManager.Instance.SetOccupied(cell.x, cell.y, true);
+        FogManager.Instance.RevealAround(cell, FogManager.Instance.buildingRevealRadius);
         isPlacing = false;
         currentData = null;
     }
@@ -83,6 +85,7 @@ public class BuildingPlacer : MonoBehaviour
         building.Initialize(data);
 
         GridManager.Instance.SetOccupied(cell.x, cell.y, true);
+        FogManager.Instance.RevealAround(cell, FogManager.Instance.buildingRevealRadius);
     }
 
     void CancelPlacement()
