@@ -11,6 +11,19 @@ public class BuildMenuUI : MonoBehaviour
     private GameObject menuPanel;
     private bool isOpen = false;
 
+    private List<(BuildingData data, Image cardImage, TextMeshProUGUI costText)> cards = new();
+
+    void Update()
+    {
+        if (!isOpen) return;
+        foreach (var (data, cardImage, costText) in cards)
+        {
+            bool canAfford = ResourceManager.Instance.CanAfford(ResourceType.Scrap, data.scrapCost);
+            cardImage.color = canAfford ? new Color(0.1f, 0.1f, 0.2f, 1f) : new Color(0.3f, 0.05f, 0.05f, 1f);
+            costText.color = canAfford ? new Color(0.4f, 1f, 0.6f) : new Color(1f, 0.3f, 0.3f);
+        }
+    }
+
     void Start()
     {
         CreateUI();
@@ -95,6 +108,8 @@ public class BuildMenuUI : MonoBehaviour
         costText.fontSize = 11;
         costText.alignment = TextAlignmentOptions.Center;
         costText.color = new Color(0.4f, 1f, 0.6f);
+
+        cards.Add((data, bg, costText));
 
         BuildingData captured = data;
         btn.onClick.AddListener(() =>
