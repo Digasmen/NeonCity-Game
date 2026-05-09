@@ -12,6 +12,7 @@ public class Building : MonoBehaviour
             SpawnDrone();
         if (data.passiveRatePerMinute > 0f)
             ResourceManager.Instance.AddRate(data.passiveResourceType, data.passiveRatePerMinute);
+        gameObject.AddComponent<BuildingGlow>();
     }
 
     void OnDestroy()
