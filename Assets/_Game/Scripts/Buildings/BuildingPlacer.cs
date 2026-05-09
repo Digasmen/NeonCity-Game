@@ -48,7 +48,13 @@ public class BuildingPlacer : MonoBehaviour
     void TryPlace(Vector2Int cell)
     {
         if (!GridManager.Instance.IsCellFree(cell.x, cell.y)) return;
+        if (!ResourceManager.Instance.CanAfford(ResourceType.Scrap, currentData.scrapCost))
+        {
+            Debug.Log($"Not enough Scrap. Need {currentData.scrapCost}.");
+            return;
+        }
 
+        ResourceManager.Instance.Spend(ResourceType.Scrap, currentData.scrapCost);
         if (preview != null) { Destroy(preview); preview = null; }
 
         Vector3 worldPos = GridManager.Instance.GetWorldPosition(cell.x, cell.y);
