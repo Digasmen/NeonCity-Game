@@ -891,6 +891,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   availableBuildings:
   - {fileID: 11400000, guid: 6da73e148d467684cbdf841f322dc96c, type: 2}
+  - {fileID: 11400000, guid: 096083afb7b300a4e854f67867831719, type: 2}
 --- !u!4 &1441981950
 Transform:
   m_ObjectHideFlags: 0

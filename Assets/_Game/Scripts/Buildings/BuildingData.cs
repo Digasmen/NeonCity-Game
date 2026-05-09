@@ -10,4 +10,8 @@ public class BuildingData : ScriptableObject
     public int scrapCost = 100;
     public Sprite icon;
     public DroneData droneData;
+
+    [Header("Passive Production")]
+    public ResourceType passiveResourceType;
+    public float passiveRatePerMinute = 0f;
 }

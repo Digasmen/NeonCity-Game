@@ -33,7 +33,7 @@ public class BuildMenuUI : MonoBehaviour
         panelRect.anchorMax = new Vector2(1, 0);
         panelRect.pivot = new Vector2(0.5f, 0);
         panelRect.anchoredPosition = new Vector2(0, 95);
-        panelRect.sizeDelta = new Vector2(0, 120);
+        panelRect.sizeDelta = new Vector2(0, 140);
 
         Image panelImg = menuPanel.AddComponent<Image>();
         panelImg.color = new Color(0.04f, 0.04f, 0.1f, 0.95f);
@@ -67,28 +67,32 @@ public class BuildMenuUI : MonoBehaviour
         cb.pressedColor = new Color(0.05f, 0.5f, 0.8f, 1f);
         btn.colors = cb;
 
-        VerticalLayoutGroup vLayout = card.AddComponent<VerticalLayoutGroup>();
-        vLayout.padding = new RectOffset(8, 8, 8, 8);
-        vLayout.spacing = 4;
-        vLayout.childControlHeight = true;
-        vLayout.childForceExpandHeight = true;
-        vLayout.childAlignment = TextAnchor.MiddleCenter;
-
-        // Name label
+        // Name label — top half of card
         GameObject nameGO = new GameObject("Name");
         nameGO.transform.SetParent(card.transform, false);
+        RectTransform nameRect = nameGO.AddComponent<RectTransform>();
+        nameRect.anchorMin = new Vector2(0, 0.5f);
+        nameRect.anchorMax = new Vector2(1, 1);
+        nameRect.offsetMin = new Vector2(4, 2);
+        nameRect.offsetMax = new Vector2(-4, -2);
         TextMeshProUGUI nameText = nameGO.AddComponent<TextMeshProUGUI>();
         nameText.text = data.buildingName;
-        nameText.fontSize = 14;
+        nameText.fontSize = 11;
+        nameText.enableWordWrapping = true;
         nameText.alignment = TextAlignmentOptions.Center;
         nameText.color = Color.white;
 
-        // Cost label
+        // Cost label — bottom half of card
         GameObject costGO = new GameObject("Cost");
         costGO.transform.SetParent(card.transform, false);
+        RectTransform costRect = costGO.AddComponent<RectTransform>();
+        costRect.anchorMin = new Vector2(0, 0);
+        costRect.anchorMax = new Vector2(1, 0.5f);
+        costRect.offsetMin = new Vector2(4, 2);
+        costRect.offsetMax = new Vector2(-4, -2);
         TextMeshProUGUI costText = costGO.AddComponent<TextMeshProUGUI>();
         costText.text = $"{data.scrapCost} Scrap";
-        costText.fontSize = 12;
+        costText.fontSize = 11;
         costText.alignment = TextAlignmentOptions.Center;
         costText.color = new Color(0.4f, 1f, 0.6f);
 

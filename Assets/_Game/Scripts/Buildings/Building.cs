@@ -9,6 +9,14 @@ public class Building : MonoBehaviour
         data = buildingData;
         if (data.droneData != null)
             SpawnDrone();
+        if (data.passiveRatePerMinute > 0f)
+            ResourceManager.Instance.AddRate(data.passiveResourceType, data.passiveRatePerMinute);
+    }
+
+    void OnDestroy()
+    {
+        if (data != null && data.passiveRatePerMinute > 0f)
+            ResourceManager.Instance.RemoveRate(data.passiveResourceType, data.passiveRatePerMinute);
     }
 
     void SpawnDrone()
