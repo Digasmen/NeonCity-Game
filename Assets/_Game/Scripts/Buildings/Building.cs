@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class Building : MonoBehaviour
 {
-    private BuildingData data;
+    public BuildingData data;
+    private GameObject spawnedDrone;
 
     public void Initialize(BuildingData buildingData)
     {
@@ -17,6 +18,8 @@ public class Building : MonoBehaviour
     {
         if (data != null && data.passiveRatePerMinute > 0f)
             ResourceManager.Instance.RemoveRate(data.passiveResourceType, data.passiveRatePerMinute);
+        if (spawnedDrone != null)
+            Destroy(spawnedDrone);
     }
 
     void SpawnDrone()
@@ -35,6 +38,7 @@ public class Building : MonoBehaviour
         droneObj.transform.position = transform.position + Vector3.up * 0.5f;
         droneObj.transform.localScale = Vector3.one * 0.3f;
         droneObj.name = "Drone_" + data.buildingName;
+        spawnedDrone = droneObj;
 
         Drone drone = droneObj.AddComponent<Drone>();
         drone.data = data.droneData;
