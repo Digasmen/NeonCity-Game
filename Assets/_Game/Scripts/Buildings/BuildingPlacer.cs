@@ -108,6 +108,17 @@ public class BuildingPlacer : MonoBehaviour
             meshChild.transform.localRotation = Quaternion.identity;
             foreach (var col in meshChild.GetComponentsInChildren<Collider>())
                 col.enabled = false;
+            // Match the auto-scale applied in Building.SpawnMeshChild so the ghost = placed size.
+            var previewRenderers = meshChild.GetComponentsInChildren<Renderer>();
+            if (previewRenderers.Length > 0)
+            {
+                Bounds b = previewRenderers[0].bounds;
+                for (int i = 1; i < previewRenderers.Length; i++) b.Encapsulate(previewRenderers[i].bounds);
+                float footprint = Mathf.Max(b.size.x, b.size.z);
+                if (footprint > 0.001f)
+                    meshChild.transform.localScale = Vector3.one *
+                        (GridManager.Instance.cellSize * 0.9f / footprint);
+            }
         }
         else
         {
@@ -146,7 +157,8 @@ public class BuildingPlacer : MonoBehaviour
 
         Building building = placed.GetComponent<Building>();
         if (building == null) building = placed.AddComponent<Building>();
-        placed.AddComponent<ProceduralBuilding>();
+        if (currentData.meshVariants == null || currentData.meshVariants.Length == 0)
+            placed.AddComponent<ProceduralBuilding>();
         building.Initialize(currentData);
         building.gridCell = cell;
 
@@ -177,7 +189,8 @@ public class BuildingPlacer : MonoBehaviour
 
         Building building = placed.GetComponent<Building>();
         if (building == null) building = placed.AddComponent<Building>();
-        placed.AddComponent<ProceduralBuilding>();
+        if (data.meshVariants == null || data.meshVariants.Length == 0)
+            placed.AddComponent<ProceduralBuilding>();
         building.Initialize(data);
         building.gridCell = cell;
 

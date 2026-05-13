@@ -214,6 +214,19 @@ public class Building : MonoBehaviour
         child.transform.localRotation = Quaternion.identity;
         foreach (var col in child.GetComponentsInChildren<Collider>())
             Destroy(col);
+
+        // Auto-scale to fit the grid cell footprint regardless of the FBX's export scale.
+        var renderers = child.GetComponentsInChildren<Renderer>();
+        if (renderers.Length > 0)
+        {
+            Bounds b = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) b.Encapsulate(renderers[i].bounds);
+            float footprint = Mathf.Max(b.size.x, b.size.z);
+            if (footprint > 0.001f)
+                child.transform.localScale = Vector3.one *
+                    (GridManager.Instance.cellSize * 0.9f / footprint);
+        }
+
         if (texture != null)
         {
             foreach (var r in child.GetComponentsInChildren<Renderer>())

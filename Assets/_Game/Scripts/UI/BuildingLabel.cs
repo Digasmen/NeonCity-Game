@@ -47,7 +47,9 @@ public class BuildingLabel : MonoBehaviour
         bg.color = new Color(0.01f, 0.02f, 0.10f, 0.96f);
 
         // Accent line at bottom (building glow color)
-        Color glowCol = GetComponent<ProceduralBuilding>()?.GlowColor ?? Color.cyan;
+        var pb = GetComponent<ProceduralBuilding>();
+        Color glowCol = pb != null ? pb.GlowColor
+                      : (_building.data != null ? _building.data.glowColor : Color.cyan);
         GameObject line = new GameObject("Line");
         line.transform.SetParent(root.transform, false);
         RectTransform lr = line.AddComponent<RectTransform>();

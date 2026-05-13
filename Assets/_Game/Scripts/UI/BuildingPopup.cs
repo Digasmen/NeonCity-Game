@@ -18,6 +18,9 @@ public class BuildingPopup : MonoBehaviour
     private Building       currentBuilding;
     private Camera         _cam;
 
+    private GameObject     _normalActionRow;
+    private GameObject     _removeConfirmRow;
+
     void Awake() { Instance = this; }
 
     void Start()
@@ -72,19 +75,63 @@ public class BuildingPopup : MonoBehaviour
             Vector2.zero, Vector2.one, Color.white);
         upgBtn.GetComponent<Button>().onClick.AddListener(OnUpgradeClicked);
 
-        // Move button
-        var moveBtn = MakeButton(new Vector2(0.04f, 0.20f), new Vector2(0.48f, 0.38f),
-            new Color(0.06f, 0.36f, 0.10f));
-        MakeLabel(moveBtn.transform, "MOVE", 10, FontStyles.Bold,
-            Vector2.zero, Vector2.one, new Color(0.5f, 1f, 0.55f));
-        moveBtn.GetComponent<Button>().onClick.AddListener(OnMoveClicked);
+        // ── Normal action row: MOVE + REMOVE ────────────────────────────
+        _normalActionRow = new GameObject("NormalActionRow");
+        _normalActionRow.transform.SetParent(_canvasGO.transform, false);
+        {
+            var r = _normalActionRow.AddComponent<RectTransform>();
+            r.anchorMin = new Vector2(0.04f, 0.20f); r.anchorMax = new Vector2(0.96f, 0.38f);
+            r.offsetMin = Vector2.zero; r.offsetMax = Vector2.zero;
+            var hlg = _normalActionRow.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
+            hlg.spacing = 6; hlg.childForceExpandWidth = true; hlg.childForceExpandHeight = true;
+            hlg.childControlWidth = true; hlg.childControlHeight = true;
+            hlg.padding = new RectOffset(0, 0, 0, 0);
 
-        // Remove button
-        var removeBtn = MakeButton(new Vector2(0.52f, 0.20f), new Vector2(0.96f, 0.38f),
-            new Color(0.48f, 0.07f, 0.07f));
-        MakeLabel(removeBtn.transform, "REMOVE", 10, FontStyles.Bold,
-            Vector2.zero, Vector2.one, new Color(1f, 0.5f, 0.5f));
-        removeBtn.GetComponent<Button>().onClick.AddListener(OnRemoveClicked);
+            var moveBtn = MakeButtonInRow(_normalActionRow.transform, new Color(0.06f, 0.36f, 0.10f));
+            MakeLabel(moveBtn.transform, "MOVE", 10, FontStyles.Bold,
+                Vector2.zero, Vector2.one, new Color(0.5f, 1f, 0.55f));
+            moveBtn.GetComponent<Button>().onClick.AddListener(OnMoveClicked);
+
+            var removeBtn = MakeButtonInRow(_normalActionRow.transform, new Color(0.48f, 0.07f, 0.07f));
+            MakeLabel(removeBtn.transform, "REMOVE", 10, FontStyles.Bold,
+                Vector2.zero, Vector2.one, new Color(1f, 0.5f, 0.5f));
+            removeBtn.GetComponent<Button>().onClick.AddListener(ShowRemoveConfirm);
+        }
+
+        // ── Remove confirm row: REMOVE? [✓ YES] [✕ CANCEL] ──────────────
+        _removeConfirmRow = new GameObject("RemoveConfirmRow");
+        _removeConfirmRow.transform.SetParent(_canvasGO.transform, false);
+        {
+            var r = _removeConfirmRow.AddComponent<RectTransform>();
+            r.anchorMin = new Vector2(0.04f, 0.20f); r.anchorMax = new Vector2(0.96f, 0.38f);
+            r.offsetMin = Vector2.zero; r.offsetMax = Vector2.zero;
+            var hlg = _removeConfirmRow.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
+            hlg.spacing = 5; hlg.childForceExpandWidth = true; hlg.childForceExpandHeight = true;
+            hlg.childControlWidth = true; hlg.childControlHeight = true;
+            hlg.padding = new RectOffset(0, 0, 0, 0);
+
+            // "REMOVE?" label
+            var lbl = new GameObject("ConfirmLabel");
+            lbl.transform.SetParent(_removeConfirmRow.transform, false);
+            lbl.AddComponent<RectTransform>();
+            var le = lbl.AddComponent<UnityEngine.UI.LayoutElement>();
+            le.flexibleWidth = 0.6f;
+            var tmp = lbl.AddComponent<TextMeshProUGUI>();
+            tmp.text = "REMOVE?"; tmp.fontSize = 9; tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = new Color(1f, 0.35f, 0.35f);
+
+            var yesBtn = MakeButtonInRow(_removeConfirmRow.transform, new Color(0.55f, 0.10f, 0.10f));
+            MakeLabel(yesBtn.transform, "✓ YES", 9, FontStyles.Bold,
+                Vector2.zero, Vector2.one, new Color(1f, 0.6f, 0.6f));
+            yesBtn.GetComponent<Button>().onClick.AddListener(OnConfirmRemove);
+
+            var cancelBtn = MakeButtonInRow(_removeConfirmRow.transform, new Color(0.10f, 0.22f, 0.35f));
+            MakeLabel(cancelBtn.transform, "✕ CANCEL", 9, FontStyles.Bold,
+                Vector2.zero, Vector2.one, new Color(0.55f, 0.75f, 1f));
+            cancelBtn.GetComponent<Button>().onClick.AddListener(HideRemoveConfirm);
+        }
+        _removeConfirmRow.SetActive(false);
 
         // Hint
         MakeLabel("Right-click to cancel move", 7.5f, FontStyles.Italic,
@@ -135,7 +182,7 @@ public class BuildingPopup : MonoBehaviour
         RefreshAll();
 
         var pb = building.GetComponent<ProceduralBuilding>();
-        _accentBar.color = pb != null ? pb.GlowColor : new Color(0f, 0.8f, 1f, 0.9f);
+        _accentBar.color = pb != null ? pb.GlowColor : building.data.glowColor;
 
         _canvasGO.transform.position = PopupWorldPos(building);
         _canvasGO.SetActive(true);
@@ -143,6 +190,7 @@ public class BuildingPopup : MonoBehaviour
 
     public void Hide()
     {
+        HideRemoveConfirm();
         _canvasGO.SetActive(false);
         currentBuilding = null;
     }
@@ -209,7 +257,19 @@ public class BuildingPopup : MonoBehaviour
         BuildingPlacer.Instance.SelectForMove(b);
     }
 
-    void OnRemoveClicked()
+    void ShowRemoveConfirm()
+    {
+        if (_normalActionRow  != null) _normalActionRow.SetActive(false);
+        if (_removeConfirmRow != null) _removeConfirmRow.SetActive(true);
+    }
+
+    void HideRemoveConfirm()
+    {
+        if (_removeConfirmRow != null) _removeConfirmRow.SetActive(false);
+        if (_normalActionRow  != null) _normalActionRow.SetActive(true);
+    }
+
+    void OnConfirmRemove()
     {
         if (currentBuilding == null) return;
         ResourceManager.Instance.Add(ResourceType.Scrap, currentBuilding.data.scrapCost / 2);
@@ -255,6 +315,21 @@ public class BuildingPopup : MonoBehaviour
         r.anchorMin = anchorMin; r.anchorMax = anchorMax;
         r.offsetMin = new Vector2(2f, 2f); r.offsetMax = new Vector2(-2f, -2f);
         UIUtils.Rounded(go, color, 8);
+        Button btn = go.AddComponent<Button>();
+        ColorBlock cb = btn.colors;
+        cb.normalColor      = Color.white;
+        cb.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+        cb.pressedColor     = new Color(0.7f, 0.7f, 0.7f, 1f);
+        btn.colors = cb;
+        return go;
+    }
+
+    /// <summary>Button sized by HorizontalLayoutGroup — no anchor positioning needed.</summary>
+    GameObject MakeButtonInRow(Transform parent, Color color)
+    {
+        var go = new GameObject("Btn"); go.transform.SetParent(parent, false);
+        go.AddComponent<RectTransform>();
+        UIUtils.Rounded(go, color, 6);
         Button btn = go.AddComponent<Button>();
         ColorBlock cb = btn.colors;
         cb.normalColor      = Color.white;

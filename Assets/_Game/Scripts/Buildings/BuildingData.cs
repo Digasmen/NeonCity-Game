@@ -5,6 +5,10 @@ public class BuildingData : ScriptableObject
 {
     public string buildingName;
 
+    [Header("Appearance")]
+    [Tooltip("Accent/glow color used by UI labels and popups. For procedural buildings this is overridden by ProceduralBuilding.GlowColor at runtime.")]
+    public Color glowColor = Color.cyan;
+
     [Header("Mesh Variants")]
     [Tooltip("FBX prefabs for this building. meshVariantLevels[i] = min level to activate meshVariants[i]. Leave empty to use procedural geometry.")]
     public GameObject[] meshVariants;

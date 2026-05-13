@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -9,6 +10,9 @@ public class ObjectivesUI : MonoBehaviour
     private TextMeshProUGUI progressText;
     private Graphic progressBar;
     private Image   leftBar;   // accent bar — pulses when near goal
+
+    private CanvasGroup _contentGroup;
+    private bool        _transitioning;
 
     void Start()
     {
@@ -81,6 +85,8 @@ public class ObjectivesUI : MonoBehaviour
         fillRect.anchorMax = new Vector2(0, 1);
         fillRect.offsetMin = Vector2.zero; fillRect.offsetMax = Vector2.zero;
         progressBar = UIUtils.Rounded(barFill, new Color(0.15f, 0.75f, 1f), 4);
+
+        _contentGroup = panel.AddComponent<CanvasGroup>();
     }
 
     TextMeshProUGUI CreateLabel(Transform parent, string text, float size, FontStyles style,
@@ -99,6 +105,7 @@ public class ObjectivesUI : MonoBehaviour
 
     void Update()
     {
+        if (_transitioning) return;
         if (MilestoneManager.Instance.Current == null)
         {
             descText.text    = "All objectives complete!";
@@ -152,6 +159,31 @@ public class ObjectivesUI : MonoBehaviour
     void OnMilestoneChanged(MilestoneData milestone)
     {
         if (milestone == null) return;
-        descText.text = milestone.description;
+        if (_transitioning) StopAllCoroutines();
+        StartCoroutine(MilestoneFade(milestone.description));
+    }
+
+    IEnumerator MilestoneFade(string newDesc)
+    {
+        _transitioning = true;
+
+        // Fade out
+        for (float t = 0; t < 0.2f; t += Time.unscaledDeltaTime)
+        {
+            _contentGroup.alpha = Mathf.Lerp(1f, 0f, t / 0.2f);
+            yield return null;
+        }
+        _contentGroup.alpha = 0f;
+        descText.text = newDesc;
+
+        // Fade in
+        for (float t = 0; t < 0.3f; t += Time.unscaledDeltaTime)
+        {
+            _contentGroup.alpha = Mathf.Lerp(0f, 1f, t / 0.3f);
+            yield return null;
+        }
+        _contentGroup.alpha = 1f;
+
+        _transitioning = false;
     }
 }

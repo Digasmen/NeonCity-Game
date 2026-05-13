@@ -38,6 +38,7 @@ public class BuildMenuUI : MonoBehaviour
         ("HOUSING",  new Color(0.30f, 1.00f, 0.50f)),
         ("SUPPORT",  new Color(0.70f, 0.40f, 1.00f)),
         ("RECON",    new Color(1.00f, 0.55f, 0.10f)),
+        ("⚙ MENU",  new Color(1.00f, 0.75f, 0.15f)),   // amber — game menu tab
     };
 
     static string BuildingIcon(string name) => name switch
@@ -88,6 +89,13 @@ public class BuildMenuUI : MonoBehaviour
     int                     _activeTab = 0;
     bool                    _collapsed = false;
 
+    // ── Menu tab ──────────────────────────────────────────────────────────
+    GameObject              _scrollGO;
+    GameObject              _menuPanel;
+    GameObject              _newGameRow;
+    GameObject              _confirmRow;
+    TextMeshProUGUI         _savedStatusLbl;
+
     // ── Tooltip ───────────────────────────────────────────────────────────
     GameObject              _tooltip;
     TextMeshProUGUI         _ttName;
@@ -101,7 +109,20 @@ public class BuildMenuUI : MonoBehaviour
     // ─────────────────────────────────────────────────────────────────────
 
     void Awake() { Instance = this; }
-    void Start()  { CreateUI(); }
+
+    void Start()
+    {
+        CreateUI();
+        SaveManager.OnSaved += OnGameSaved;
+    }
+
+    void OnDestroy() => SaveManager.OnSaved -= OnGameSaved;
+
+    void OnGameSaved()
+    {
+        if (_savedStatusLbl != null)
+            _savedStatusLbl.text = $"Saved {System.DateTime.Now:HH:mm}";
+    }
 
     // ── Update: affordability tinting ─────────────────────────────────────
 
@@ -262,6 +283,7 @@ public class BuildMenuUI : MonoBehaviour
 
         // ── Horizontal scroll area ─────────────────────────────────────────
         var scrollGO = new GameObject("ScrollView");
+        _scrollGO = scrollGO;
         scrollGO.transform.SetParent(_body.transform, false);
         var scrollRT = scrollGO.AddComponent<RectTransform>();
         scrollRT.anchorMin = Vector2.zero; scrollRT.anchorMax = Vector2.one;
@@ -308,33 +330,13 @@ public class BuildMenuUI : MonoBehaviour
         // ── Tooltip (hidden by default) ───────────────────────────────────
         CreateTooltip(root);
 
+        // ── Menu panel (shown when ⚙ MENU tab is active) ──────────────────
+        CreateMenuPanel();
+
         // ── Seed starter cards ────────────────────────────────────────────
         foreach (var data in availableBuildings)
             if (!data.lockedAtStart)
                 CreateBuildingCard(data);
-
-        // ── New Game button (sits above panel, bottom-right) ──────────────
-        var ngGO = new GameObject("NewGameBtn");
-        ngGO.transform.SetParent(root, false);
-        var ngRT = ngGO.AddComponent<RectTransform>();
-        ngRT.anchorMin        = new Vector2(1f, 0f);
-        ngRT.anchorMax        = new Vector2(1f, 0f);
-        ngRT.pivot            = new Vector2(1f, 0f);
-        ngRT.anchoredPosition = new Vector2(-10f, PanelHFull + 8f);
-        ngRT.sizeDelta        = new Vector2(108f, 28f);
-        UIUtils.Rounded(ngGO, new Color(0.20f, 0.04f, 0.04f, 0.92f), 6);
-        var ngBtn = ngGO.AddComponent<Button>();
-        ngBtn.transition = Selectable.Transition.None;
-        var ngG  = ngGO.GetComponent<Graphic>();
-        var ngET = ngGO.AddComponent<EventTrigger>();
-        AddHover(ngET,
-            () => ngG.color = new Color(0.40f, 0.07f, 0.07f, 1f),
-            () => ngG.color = new Color(0.20f, 0.04f, 0.04f, 0.92f));
-        ngBtn.onClick.AddListener(() => SaveManager.Instance.NewGame());
-        var ngLbl = UIUtils.Label(ngGO.transform, "Lbl", "NEW GAME", 9.5f,
-            new Color(1f, 0.40f, 0.40f), FontStyles.Bold, TextAlignmentOptions.Center);
-        var ngLR = ngLbl.GetComponent<RectTransform>();
-        ngLR.anchorMin = Vector2.zero; ngLR.anchorMax = Vector2.one; ngLR.sizeDelta = Vector2.zero;
     }
 
     // ── Tooltip builder ───────────────────────────────────────────────────
@@ -435,6 +437,9 @@ public class BuildMenuUI : MonoBehaviour
 
     void SetActiveTab(int index)
     {
+        // Reset confirm dialog when navigating away from the MENU tab
+        if (_activeTab == 5 && index != 5) HideConfirm();
+
         _activeTab = index;
         for (int i = 0; i < _tabs.Length; i++)
         {
@@ -444,8 +449,14 @@ public class BuildMenuUI : MonoBehaviour
             _tabLabels[i].color     = on ? col : new Color(0.45f, 0.55f, 0.70f);
             _tabUnderlines[i].color = on ? col : Color.clear;
         }
-        foreach (var e in _cardList)
-            e.root.SetActive(_activeTab == 0 || (int)e.category == _activeTab - 1);
+
+        bool isMenu = (index == 5);
+        _scrollGO.SetActive(!isMenu);
+        _menuPanel.SetActive(isMenu);
+
+        if (!isMenu)
+            foreach (var e in _cardList)
+                e.root.SetActive(_activeTab == 0 || (int)e.category == _activeTab - 1);
     }
 
     // ── Collapse ──────────────────────────────────────────────────────────
@@ -562,6 +573,110 @@ public class BuildMenuUI : MonoBehaviour
             costLabel = costLbl,
             popLabel  = popLbl,
         });
+    }
+
+    // ── Menu panel ────────────────────────────────────────────────────────
+
+    void CreateMenuPanel()
+    {
+        _menuPanel = new GameObject("MenuPanel");
+        _menuPanel.transform.SetParent(_body.transform, false);
+        var mpRT = _menuPanel.AddComponent<RectTransform>();
+        mpRT.anchorMin = Vector2.zero;
+        mpRT.anchorMax = Vector2.one;
+        mpRT.offsetMin = Vector2.zero;
+        mpRT.offsetMax = new Vector2(0f, -(TabH + 1f));
+        _menuPanel.AddComponent<Image>().color = Color.clear;
+
+        // Header label
+        var hdr = UIUtils.Label(_menuPanel.transform, "Hdr", "◈  GAME MENU", 10f,
+            UIUtils.Amber, FontStyles.Bold, TextAlignmentOptions.Left);
+        UIUtils.PinTop(hdr.GetComponent<RectTransform>(), 8f, 15f, 14f, 14f);
+
+        // Amber divider under header
+        HLine(_menuPanel.transform, "HdrDiv", new Color(1f, 0.75f, 0.15f, 0.25f), true, 26f);
+
+        // ── Save Game row ─────────────────────────────────────────────────
+        var saveRow = new GameObject("SaveRow");
+        saveRow.transform.SetParent(_menuPanel.transform, false);
+        var srRT = saveRow.AddComponent<RectTransform>();
+        UIUtils.PinTop(srRT, 32f, 26f, 14f, 14f);
+        var srHLG = saveRow.AddComponent<HorizontalLayoutGroup>();
+        srHLG.spacing = 10f;
+        srHLG.childControlWidth  = false; srHLG.childForceExpandWidth  = false;
+        srHLG.childControlHeight = true;  srHLG.childForceExpandHeight = true;
+        srHLG.childAlignment     = TextAnchor.MiddleLeft;
+
+        MakeMenuButton(saveRow.transform, "SAVE GAME", UIUtils.Cyan, 96f,
+            () => SaveManager.Instance?.Save());
+
+        _savedStatusLbl = UIUtils.Label(saveRow.transform, "Status", "—",
+            UITheme.FCaption, UITheme.TextLow, FontStyles.Normal, TextAlignmentOptions.Left);
+        _savedStatusLbl.GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 0f);
+
+        // ── New Game row ──────────────────────────────────────────────────
+        _newGameRow = new GameObject("NewGameRow");
+        _newGameRow.transform.SetParent(_menuPanel.transform, false);
+        var ngrRT = _newGameRow.AddComponent<RectTransform>();
+        UIUtils.PinTop(ngrRT, 64f, 26f, 14f, 14f);
+        MakeMenuButton(_newGameRow.transform, "NEW GAME", UIUtils.Red, 96f, ShowConfirm);
+
+        // ── Confirm row (hidden by default) ───────────────────────────────
+        _confirmRow = new GameObject("ConfirmRow");
+        _confirmRow.transform.SetParent(_menuPanel.transform, false);
+        var crRT = _confirmRow.AddComponent<RectTransform>();
+        UIUtils.PinTop(crRT, 64f, 26f, 14f, 14f);
+        var crHLG = _confirmRow.AddComponent<HorizontalLayoutGroup>();
+        crHLG.spacing = 6f;
+        crHLG.childControlWidth  = false; crHLG.childForceExpandWidth  = false;
+        crHLG.childControlHeight = true;  crHLG.childForceExpandHeight = true;
+        crHLG.childAlignment     = TextAnchor.MiddleLeft;
+
+        var prompt = UIUtils.Label(_confirmRow.transform, "Prompt", "ERASE?",
+            UITheme.FCaption, UIUtils.Red, FontStyles.Bold, TextAlignmentOptions.Left);
+        prompt.GetComponent<RectTransform>().sizeDelta = new Vector2(52f, 0f);
+
+        MakeMenuButton(_confirmRow.transform, "✓ YES", UIUtils.Red, 56f, () =>
+        {
+            HideConfirm();
+            SaveManager.Instance?.NewGame();
+        });
+        MakeMenuButton(_confirmRow.transform, "✕ CANCEL",
+            new Color(0.45f, 0.55f, 0.70f), 72f, HideConfirm);
+
+        _confirmRow.SetActive(false);
+
+        _menuPanel.SetActive(false);
+    }
+
+    void ShowConfirm() { _newGameRow.SetActive(false); _confirmRow.SetActive(true);  }
+    void HideConfirm() { _confirmRow.SetActive(false);  _newGameRow.SetActive(true); }
+
+    /// <summary>Creates a fixed-width button using the existing AddHover helper.</summary>
+    GameObject MakeMenuButton(Transform parent, string label, Color col, float width,
+                               System.Action onClick)
+    {
+        var go = new GameObject("Btn_" + label);
+        go.transform.SetParent(parent, false);
+        go.AddComponent<RectTransform>().sizeDelta = new Vector2(width, 0f);
+        UIUtils.Rounded(go, new Color(col.r * 0.15f, col.g * 0.15f, col.b * 0.15f, 1f), UITheme.Rsm);
+
+        var btn = go.AddComponent<Button>();
+        btn.transition = Selectable.Transition.None;
+        btn.onClick.AddListener(() => onClick?.Invoke());
+
+        var bg = go.GetComponent<Graphic>();
+        var et = go.AddComponent<EventTrigger>();
+        AddHover(et,
+            () => bg.color = new Color(col.r * 0.28f, col.g * 0.28f, col.b * 0.28f, 1f),
+            () => bg.color = new Color(col.r * 0.15f, col.g * 0.15f, col.b * 0.15f, 1f));
+
+        var lbl = UIUtils.Label(go.transform, "Lbl", label, UITheme.FCaption,
+            col, FontStyles.Bold, TextAlignmentOptions.Center);
+        var lRT = lbl.GetComponent<RectTransform>();
+        lRT.anchorMin = Vector2.zero; lRT.anchorMax = Vector2.one; lRT.sizeDelta = Vector2.zero;
+
+        return go;
     }
 
     // ── Public unlock ──────────────────────────────────────────────────────
