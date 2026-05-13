@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 373869dafb09ec74cbd54015ea70662b, type: 3}
+  m_Name: Charging Station
+  m_EditorClassIdentifier: 
+  buildingName: Charging Station
+  meshVariants:
+  - {fileID: 3891165688950197153, guid: 82c78935a9dce3b408c266ce19eecbfd, type: 3}
+  meshVariantLevels: 
+  textureVariants: []
+  width: 1
+  height: 1
+  scrapCost: 200
+  icon: {fileID: 0}
+  droneData: {fileID: 0}
+  description: 
+  lockedAtStart: 0
+  populationRequired: 0
+  passiveResourceType: 0
+  passiveRatePerMinute: 0
+  consumptionType: 1
+  consumptionRatePerMinute: 50
+  adjacencyBuildingType: 
+  adjacencyBonus: 1.5
+  maxLevel: 3
+  upgradeCostScrap: fa000000c2010000
+  upgradeCostNano: 000000004b000000
+  rateMultipliers:
+  - 1
+  - 1
+  - 1

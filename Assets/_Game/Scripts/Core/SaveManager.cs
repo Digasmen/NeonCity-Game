@@ -66,6 +66,9 @@ public class SaveManager : MonoBehaviour
         Save();
     }
 
+    /// <summary>Fired after each successful save — drives the auto-save indicator toast.</summary>
+    public static event System.Action OnSaved;
+
     public void Save()
     {
         SaveData data = new SaveData();
@@ -73,14 +76,15 @@ public class SaveManager : MonoBehaviour
         foreach (var r in ResourceManager.Instance.resources)
             data.resources.Add(new ResourceSaveData { type = r.type.ToString(), amount = r.amount });
 
-        foreach (var b in FindObjectsByType<Building>(FindObjectsSortMode.None))
+        foreach (var b in Building.All)
         {
             Vector2Int cell = GridManager.Instance.GetGridPosition(b.transform.position);
             data.buildings.Add(new BuildingSaveData
             {
                 buildingName = b.data.buildingName,
                 gridX = cell.x,
-                gridY = cell.y
+                gridY = cell.y,
+                level = b.level
             });
         }
 
@@ -93,6 +97,7 @@ public class SaveManager : MonoBehaviour
 
         File.WriteAllText(SavePath, JsonUtility.ToJson(data, true));
         Debug.Log("Game saved.");
+        OnSaved?.Invoke();
     }
 
     public void Load()
@@ -117,8 +122,9 @@ public class SaveManager : MonoBehaviour
                 Debug.LogWarning($"BuildingData not found for: '{bd.buildingName}'");
                 continue;
             }
-            Debug.Log($"Placing {bd.buildingName} at ({bd.gridX},{bd.gridY})");
-            BuildingPlacer.Instance.PlaceDirectly(buildingData, new Vector2Int(bd.gridX, bd.gridY));
+            Building placed = BuildingPlacer.Instance.PlaceDirectly(buildingData, new Vector2Int(bd.gridX, bd.gridY));
+            if (placed != null && bd.level > 1)
+                placed.SetLevel(bd.level);
         }
 
         Camera.main.transform.position = new Vector3(data.cameraX, data.cameraY, data.cameraZ);
@@ -129,5 +135,12 @@ public class SaveManager : MonoBehaviour
     {
         if (File.Exists(SavePath)) File.Delete(SavePath);
         Debug.Log("Save deleted.");
+    }
+
+    public void NewGame()
+    {
+        DeleteSave();
+        UnityEngine.SceneManagement.SceneManager.LoadScene(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }
 }

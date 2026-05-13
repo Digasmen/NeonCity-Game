@@ -1,40 +1,45 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class BuildingGlow : MonoBehaviour
 {
-    [Header("Pulse")]
     public float minIntensity = 0.4f;
     public float maxIntensity = 2.5f;
     public float beatInterval = 1.7f;
 
-    private Material mat;
-    private Color baseColor;
+    float _phaseOffset;
+
+    struct GlowTarget { public Material mat; public Color baseColor; }
+    readonly List<GlowTarget> _targets = new();
 
     void Start()
     {
-        Renderer r = GetComponentInChildren<Renderer>();
-        if (r == null) return;
+        _phaseOffset = (GetInstanceID() % 1000) / 1000f * Mathf.PI * 2f;
+        Rebuild();
+    }
 
-        mat = r.material;
-        Color emission = mat.GetColor("_EmissionColor");
-
-        // Strip intensity to get pure hue
-        float peak = Mathf.Max(emission.r, emission.g, emission.b);
-        baseColor = peak > 0 ? emission / peak : Color.white;
+    public void Rebuild()
+    {
+        _targets.Clear();
+        foreach (var r in GetComponentsInChildren<Renderer>())
+        {
+            foreach (var mat in r.materials)
+            {
+                if (!mat.IsKeywordEnabled("_EMISSION")) continue;
+                Color emission = mat.GetColor("_EmissionColor");
+                float peak = Mathf.Max(emission.r, emission.g, emission.b);
+                if (peak <= 0) continue;
+                _targets.Add(new GlowTarget { mat = mat, baseColor = emission / peak });
+            }
+        }
     }
 
     void Update()
     {
-        if (mat == null) return;
-
-        float beat = (Mathf.Sin(Time.time * (2f * Mathf.PI / beatInterval)) + 1f) / 2f;
-
+        if (_targets.Count == 0) return;
+        float beat = (Mathf.Sin(Time.time * (2f * Mathf.PI / beatInterval) + _phaseOffset) + 1f) / 2f;
         float intensity = Mathf.Lerp(minIntensity, maxIntensity, beat);
-        mat.SetColor("_EmissionColor", baseColor * intensity);
-    }
-
-    void OnDestroy()
-    {
-        if (mat != null) Destroy(mat);
+        foreach (var t in _targets)
+            t.mat.SetColor("_EmissionColor", t.baseColor * intensity);
     }
 }

@@ -24,4 +24,5 @@ public class BuildingSaveData
     public string buildingName;
     public int gridX;
     public int gridY;
+    public int level = 1;
 }

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67e1492aae42a3043a446f004e741478, type: 3}
   m_Name: Milestone_04
   m_EditorClassIdentifier: 
-  description: Collect 150 Data
+  description: Collect 200 Data
   resourceType: 3
-  targetAmount: 150
-  buildingToUnlock: {fileID: 0}
+  targetAmount: 200
+  buildingToUnlock: {fileID: 11400000, guid: fc741eb72721b7a4991b1a5b10dd4cf8, type: 2}
   completionMessage: Sector 03 fully operational!

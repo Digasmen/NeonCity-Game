@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a650413cee715144facfec3ba419efa3, type: 3}
+  m_Name: Scout Drone
+  m_EditorClassIdentifier: 
+  droneName: Scout Drone
+  moveSpeed: 4
+  carryCapacity: 30
+  resourceType: 5
+  prefab: {fileID: 463125709316740683, guid: 3ae8a6a2423fe4642b73db668af07a1c, type: 3}
+  droneColor: {r: 1, g: 0.6, b: 0, a: 1}
+  batteryDrainRate: 4

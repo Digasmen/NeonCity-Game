@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67e1492aae42a3043a446f004e741478, type: 3}
   m_Name: Milestone_01
   m_EditorClassIdentifier: 
-  description: Collect 500 Scrap
+  description: Collect 800 Scrap
   resourceType: 0
-  targetAmount: 500
+  targetAmount: 800
   buildingToUnlock: {fileID: 11400000, guid: 096083afb7b300a4e854f67867831719, type: 2}
   completionMessage: Energy Generator Unlocked!

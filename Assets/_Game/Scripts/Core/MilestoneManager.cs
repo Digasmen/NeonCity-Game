@@ -14,6 +14,7 @@ public class MilestoneManager : MonoBehaviour
     public MilestoneData Current => currentIndex < milestones.Count ? milestones[currentIndex] : null;
     public event Action<MilestoneData> OnMilestoneCompleted;
     public event Action<MilestoneData> OnMilestoneChanged;
+    public event Action OnGameWon;
 
     void Awake()
     {
@@ -29,8 +30,10 @@ public class MilestoneManager : MonoBehaviour
     {
         if (Current == null) return;
 
-        float amount = ResourceManager.Instance.Get(Current.resourceType);
-        if (amount >= Current.targetAmount)
+        bool primary = ResourceManager.Instance.Get(Current.resourceType) >= Current.targetAmount;
+        bool secondary = !Current.hasSecondCondition ||
+            ResourceManager.Instance.Get(Current.secondResourceType) >= Current.secondTargetAmount;
+        if (primary && secondary)
             CompleteCurrent();
     }
 
@@ -59,6 +62,10 @@ public class MilestoneManager : MonoBehaviour
 
         OnMilestoneCompleted?.Invoke(completed);
         currentIndex++;
-        OnMilestoneChanged?.Invoke(Current);
+
+        if (currentIndex >= milestones.Count)
+            OnGameWon?.Invoke();
+        else
+            OnMilestoneChanged?.Invoke(Current);
     }
 }

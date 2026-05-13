@@ -16,5 +16,5 @@ MonoBehaviour:
   moveSpeed: 3
   carryCapacity: 100
   resourceType: 0
-  prefab: {fileID: 0}
-  glowColor: {r: 0, g: 0.78431374, b: 1, a: 1}
+  prefab: {fileID: 1242538632108362322, guid: 1afb496409bd2aa4bbee7165c7b72202, type: 3}
+  droneColor: {r: 0.05, g: 0.35, b: 1, a: 1}

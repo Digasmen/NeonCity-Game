@@ -19,5 +19,16 @@ MonoBehaviour:
   scrapCost: 200
   icon: {fileID: 0}
   droneData: {fileID: 11400000, guid: 70b31dd9b85b1f842ba5463ae3c1120b, type: 2}
+  lockedAtStart: 1
+  populationRequired: 0
   passiveResourceType: 0
   passiveRatePerMinute: 0
+  maxLevel: 5
+  upgradeCostScrap: 960000002c010000c800000090010000
+  upgradeCostNano: 00000000000000003200000078000000
+  rateMultipliers:
+  - 1
+  - 1.6
+  - 2.5
+  - 3.5
+  - 5

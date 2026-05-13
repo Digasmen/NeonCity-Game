@@ -13,9 +13,35 @@ MonoBehaviour:
   m_Name: Scrap Collector
   m_EditorClassIdentifier: 
   buildingName: Scrap Collector
-  prefab: {fileID: 6979394070350172932, guid: 7f822c9b66ae2ad46a2bf09108b2635e, type: 3}
+  meshVariants:
+  - {fileID: 7487634118012064125, guid: 0a52abee676ce1249b0d6993e0fbe464, type: 3}
+  - {fileID: 4402779284890409053, guid: 3ee95b5789a022a4b8b0042cc9875fb1, type: 3}
+  - {fileID: 2103500506718073353, guid: 3d1a0ab361cbd0149b9f9dbd90c59919, type: 3}
+  meshVariantLevels: 010000000300000005000000
+  textureVariants:
+  - {fileID: 2800000, guid: abf446f37d80fdd46927c81b67abae02, type: 3}
+  - {fileID: 2800000, guid: b62581a9b6f98534495a0c5471626882, type: 3}
+  - {fileID: 2800000, guid: 886a498b2799d904ea00b112b6ed6177, type: 3}
   width: 1
   height: 1
   scrapCost: 100
   icon: {fileID: 0}
   droneData: {fileID: 11400000, guid: 03df45e3274040f498420757ea989c7c, type: 2}
+  description: 
+  lockedAtStart: 0
+  populationRequired: 0
+  passiveResourceType: 0
+  passiveRatePerMinute: 0
+  consumptionType: 0
+  consumptionRatePerMinute: 0
+  adjacencyBuildingType: 
+  adjacencyBonus: 1.5
+  maxLevel: 5
+  upgradeCostScrap: 960000002c010000c800000090010000
+  upgradeCostNano: 00000000000000003200000078000000
+  rateMultipliers:
+  - 1
+  - 1.6
+  - 2.5
+  - 3.5
+  - 5

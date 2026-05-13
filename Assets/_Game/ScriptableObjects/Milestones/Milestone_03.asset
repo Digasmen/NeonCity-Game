@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67e1492aae42a3043a446f004e741478, type: 3}
   m_Name: Milestone_03
   m_EditorClassIdentifier: 
-  description: Collect 300 Polymer
+  description: Collect 450 Polymer
   resourceType: 2
-  targetAmount: 300
+  targetAmount: 450
   buildingToUnlock: {fileID: 11400000, guid: 46b2c5fb9ba3061458fb1df5befb82c0, type: 2}
   completionMessage: Data Tower unlocked!
