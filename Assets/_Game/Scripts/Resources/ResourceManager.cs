@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 public enum ResourceType { Scrap, Energy, Polymer, Data, Population, Nano }
@@ -149,17 +150,62 @@ public class ResourceManager : MonoBehaviour
             OnResourceCollected?.Invoke(type, actual, worldPos);
     }
 
-    public void AddRate(ResourceType type, float ratePerMinute)
+    // ── Rate attribution ──────────────────────────────────────────────────
+    // Tracks which Building (if any) contributed each rate slice, for the
+    // Production Breakdown popup. Anonymous contributors (events) carry null.
+
+    readonly Dictionary<ResourceType, List<(Building b, float rate)>> _contributors = new();
+
+    public void AddRate(ResourceType type, float ratePerMinute, Building source = null)
     {
         var r = GetResource(type);
         if (r != null) r.ratePerMinute += ratePerMinute;
+        if (!_contributors.TryGetValue(type, out var list))
+        {
+            list = new List<(Building, float)>();
+            _contributors[type] = list;
+        }
+        list.Add((source, ratePerMinute));
     }
 
-    public void RemoveRate(ResourceType type, float ratePerMinute)
+    public void RemoveRate(ResourceType type, float ratePerMinute, Building source = null)
     {
         var r = GetResource(type);
         if (r != null) r.ratePerMinute -= ratePerMinute;
+        if (_contributors.TryGetValue(type, out var list))
+        {
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                if (list[i].b == source && Mathf.Approximately(list[i].rate, ratePerMinute))
+                {
+                    list.RemoveAt(i);
+                    return;
+                }
+            }
+        }
+    }
+
+    /// <summary>Returns the list of (building, rate) contributors for `type`.
+    /// Building may be null (anonymous, e.g. event-driven). Used by ProductionBreakdownPopup.</summary>
+    public IReadOnlyList<(Building b, float rate)> GetContributions(ResourceType type)
+    {
+        return _contributors.TryGetValue(type, out var list)
+            ? list
+            : (IReadOnlyList<(Building, float)>)System.Array.Empty<(Building, float)>();
     }
 
     Resource GetResource(ResourceType type) => resources.Find(r => r.type == type);
+
+    /// <summary>Temporarily scales a resource's maxAmount by `multiplier` for `duration` seconds.
+    /// Used by Polymer Leak threat event. Clamps current amount if it exceeds the new cap.</summary>
+    public IEnumerator ScaleMaxFor(ResourceType type, float multiplier, float duration)
+    {
+        var r = GetResource(type);
+        if (r == null) yield break;
+        float saved = r.maxAmount;
+        r.maxAmount = saved * multiplier;
+        if (r.amount > r.maxAmount) r.amount = r.maxAmount;
+        yield return new WaitForSeconds(duration);
+        r.maxAmount = saved;
+    }
 }

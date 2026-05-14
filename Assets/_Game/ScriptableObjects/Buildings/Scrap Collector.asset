@@ -34,7 +34,7 @@ MonoBehaviour:
   passiveRatePerMinute: 0
   consumptionType: 0
   consumptionRatePerMinute: 0
-  adjacencyBuildingType: 
+  adjacencyBuildingType: Energy Generator
   adjacencyBonus: 1.5
   maxLevel: 5
   upgradeCostScrap: 960000002c010000c800000090010000

@@ -26,7 +26,7 @@ MonoBehaviour:
   passiveRatePerMinute: 30
   consumptionType: 1
   consumptionRatePerMinute: 25
-  adjacencyBuildingType: 
+  adjacencyBuildingType: Shelter
   adjacencyBonus: 1.5
   maxLevel: 5
   upgradeCostScrap: 960000002c010000c800000090010000

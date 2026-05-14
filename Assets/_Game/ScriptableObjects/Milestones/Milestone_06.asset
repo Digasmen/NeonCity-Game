@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67e1492aae42a3043a446f004e741478, type: 3}
+  m_Name: Milestone_06
+  m_EditorClassIdentifier:
+  description: Reach 500 Nano to unlock the Server Farm
+  resourceType: 5
+  targetAmount: 500
+  hasSecondCondition: 0
+  secondResourceType: 0
+  secondTargetAmount: 0
+  buildingCountTarget: 0
+  buildingCountName:
+  buildingToUnlock: {fileID: 11400000, guid: a1b2c3d4e5f67890123456789abcdef0, type: 2}
+  completionMessage: Compute coming online — Sector 04 boots up.

@@ -216,7 +216,11 @@ public class BuildingPopup : MonoBehaviour
             float rate = d.passiveRatePerMinute *
                 (currentBuilding.level <= d.rateMultipliers.Length
                     ? d.rateMultipliers[currentBuilding.level - 1] : 1f);
-            rateText.text = $"+{rate:0}/m  {d.passiveResourceType}";
+            float mult = currentBuilding.CurrentMultiplier;
+            string baseStr = $"+{rate:0}/m  {d.passiveResourceType}";
+            rateText.text = mult > 1.01f
+                ? $"{baseStr}  <color=#FFB833>×{mult:0.00}</color>"
+                : baseStr;
         }
         else
         {

@@ -115,19 +115,37 @@ public class ObjectivesUI : MonoBehaviour
         }
 
         MilestoneData m = MilestoneManager.Instance.Current;
-        float current  = ResourceManager.Instance.Get(m.resourceType);
-        float progress = Mathf.Clamp01(current / m.targetAmount);
+        float progress;
 
-        if (m.hasSecondCondition)
+        if (!string.IsNullOrEmpty(m.buildingCountName) && m.buildingCountTarget > 0)
         {
-            float cur2  = ResourceManager.Instance.Get(m.secondResourceType);
-            float prog2 = Mathf.Clamp01(cur2 / m.secondTargetAmount);
-            progress = (progress + prog2) * 0.5f;
-            progressText.text = $"{current:0}/{m.targetAmount:0}  ·  {cur2:0}/{m.secondTargetAmount:0}";
+            // Building-count milestone (e.g. "Build 5 Server Farms")
+            int count = 0;
+            foreach (var b in Building.All)
+                if (b != null && b.data != null && b.data.buildingName == m.buildingCountName) count++;
+            progress = Mathf.Clamp01(count / (float)m.buildingCountTarget);
+            progressText.text = $"{count} / {m.buildingCountTarget}  {m.buildingCountName}s";
         }
         else
         {
-            progressText.text = $"{current:0} / {m.targetAmount:0}";
+            float current = ResourceManager.Instance.Get(m.resourceType);
+            progress = m.targetAmount > 0f
+                ? Mathf.Clamp01(current / m.targetAmount)
+                : 1f;
+
+            if (m.hasSecondCondition)
+            {
+                float cur2  = ResourceManager.Instance.Get(m.secondResourceType);
+                float prog2 = m.secondTargetAmount > 0f
+                    ? Mathf.Clamp01(cur2 / m.secondTargetAmount)
+                    : 1f;
+                progress = (progress + prog2) * 0.5f;
+                progressText.text = $"{current:0}/{m.targetAmount:0}  ·  {cur2:0}/{m.secondTargetAmount:0}";
+            }
+            else
+            {
+                progressText.text = $"{current:0} / {m.targetAmount:0}";
+            }
         }
 
         progressBar.rectTransform.anchorMax = new Vector2(progress, 1f);

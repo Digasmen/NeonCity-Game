@@ -179,8 +179,11 @@ public class Drone : MonoBehaviour
         Vector3 target    = new Vector3(destination.x, transform.position.y, destination.z);
         Vector3 direction = (target - transform.position).normalized;
 
+        float speed = data.moveSpeed
+                    * DecreeManager.DroneSpeedMultiplier
+                    * EventManager.DroneSpeedEventMult;
         transform.position = Vector3.MoveTowards(
-            transform.position, target, data.moveSpeed * Time.deltaTime);
+            transform.position, target, speed * Time.deltaTime);
 
         if (direction.sqrMagnitude > 0.001f)
         {

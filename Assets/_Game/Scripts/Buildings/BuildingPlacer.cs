@@ -19,6 +19,7 @@ public class BuildingPlacer : MonoBehaviour
     private Quaternion _movingOriginalRot;
     private bool _skipNextTap;
     private bool _previewWasValid = true;
+    private AdjacencyHaloPreview _haloPreview;
 
     private static readonly string[] _dropBuildings = { "Shelter", "Clinic" };
 
@@ -99,6 +100,14 @@ public class BuildingPlacer : MonoBehaviour
 
         _previewWasValid = true;   // reset so first frame computes fresh tint
 
+        // Adjacency synergy preview — rings around buildings that would buff/be-buffed
+        if (_haloPreview == null)
+        {
+            var haloGO = new GameObject("AdjacencyHaloPreview");
+            _haloPreview = haloGO.AddComponent<AdjacencyHaloPreview>();
+        }
+        _haloPreview.ShowFor(data);
+
         preview = new GameObject("Preview_" + data.buildingName);
         var meshPrefab = data.GetMeshForLevel(1);
         if (meshPrefab != null)
@@ -177,6 +186,7 @@ public class BuildingPlacer : MonoBehaviour
 
         isPlacing = false;
         currentData = null;
+        _haloPreview?.Clear();
     }
 
     public Building PlaceDirectly(BuildingData data, Vector2Int cell)
@@ -250,6 +260,7 @@ public class BuildingPlacer : MonoBehaviour
         preview = null;
         isPlacing = false;
         currentData = null;
+        _haloPreview?.Clear();
     }
 
     IEnumerator DropAnimation(GameObject building, Vector3 finalPos)

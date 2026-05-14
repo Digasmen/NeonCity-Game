@@ -38,6 +38,7 @@ public class BuildMenuUI : MonoBehaviour
         ("HOUSING",  new Color(0.30f, 1.00f, 0.50f)),
         ("SUPPORT",  new Color(0.70f, 0.40f, 1.00f)),
         ("RECON",    new Color(1.00f, 0.55f, 0.10f)),
+        ("DECREES",  new Color(0.92f, 0.35f, 0.92f)),  // magenta — Nano-cost permanent buffs
         ("⚙ MENU",  new Color(1.00f, 0.75f, 0.15f)),   // amber — game menu tab
     };
 
@@ -96,6 +97,18 @@ public class BuildMenuUI : MonoBehaviour
     GameObject              _confirmRow;
     TextMeshProUGUI         _savedStatusLbl;
 
+    // ── Decrees tab ───────────────────────────────────────────────────────
+    GameObject              _decreesPanel;
+    Transform               _decreesContent;
+    class DecreeRow
+    {
+        public string id;
+        public Graphic   buyBg;
+        public TextMeshProUGUI buyLabel;
+        public TextMeshProUGUI status;
+    }
+    readonly List<DecreeRow> _decreeRows = new();
+
     // ── Tooltip ───────────────────────────────────────────────────────────
     GameObject              _tooltip;
     TextMeshProUGUI         _ttName;
@@ -114,9 +127,18 @@ public class BuildMenuUI : MonoBehaviour
     {
         CreateUI();
         SaveManager.OnSaved += OnGameSaved;
+        if (DecreeManager.Instance != null)
+            DecreeManager.Instance.OnDecreePurchased += OnDecreePurchased;
     }
 
-    void OnDestroy() => SaveManager.OnSaved -= OnGameSaved;
+    void OnDestroy()
+    {
+        SaveManager.OnSaved -= OnGameSaved;
+        if (DecreeManager.Instance != null)
+            DecreeManager.Instance.OnDecreePurchased -= OnDecreePurchased;
+    }
+
+    void OnDecreePurchased(string id) => RefreshDecreesPanel();
 
     void OnGameSaved()
     {
@@ -333,6 +355,9 @@ public class BuildMenuUI : MonoBehaviour
         // ── Menu panel (shown when ⚙ MENU tab is active) ──────────────────
         CreateMenuPanel();
 
+        // ── Decrees panel (shown when DECREES tab is active) ──────────────
+        CreateDecreesPanel();
+
         // ── Seed starter cards ────────────────────────────────────────────
         foreach (var data in availableBuildings)
             if (!data.lockedAtStart)
@@ -438,7 +463,7 @@ public class BuildMenuUI : MonoBehaviour
     void SetActiveTab(int index)
     {
         // Reset confirm dialog when navigating away from the MENU tab
-        if (_activeTab == 5 && index != 5) HideConfirm();
+        if (_activeTab == 6 && index != 6) HideConfirm();
 
         _activeTab = index;
         for (int i = 0; i < _tabs.Length; i++)
@@ -450,13 +475,19 @@ public class BuildMenuUI : MonoBehaviour
             _tabUnderlines[i].color = on ? col : Color.clear;
         }
 
-        bool isMenu = (index == 5);
-        _scrollGO.SetActive(!isMenu);
+        bool isDecrees = (index == 5);
+        bool isMenu    = (index == 6);
+        bool isCards   = !isDecrees && !isMenu;
+
+        _scrollGO.SetActive(isCards);
+        _decreesPanel.SetActive(isDecrees);
         _menuPanel.SetActive(isMenu);
 
-        if (!isMenu)
+        if (isCards)
             foreach (var e in _cardList)
                 e.root.SetActive(_activeTab == 0 || (int)e.category == _activeTab - 1);
+
+        if (isDecrees) RefreshDecreesPanel();
     }
 
     // ── Collapse ──────────────────────────────────────────────────────────
@@ -651,6 +682,185 @@ public class BuildMenuUI : MonoBehaviour
 
     void ShowConfirm() { _newGameRow.SetActive(false); _confirmRow.SetActive(true);  }
     void HideConfirm() { _confirmRow.SetActive(false);  _newGameRow.SetActive(true); }
+
+    // ── Decrees panel ────────────────────────────────────────────────────
+
+    void CreateDecreesPanel()
+    {
+        _decreesPanel = new GameObject("DecreesPanel");
+        _decreesPanel.transform.SetParent(_body.transform, false);
+        var dpRT = _decreesPanel.AddComponent<RectTransform>();
+        dpRT.anchorMin = Vector2.zero;
+        dpRT.anchorMax = Vector2.one;
+        dpRT.offsetMin = Vector2.zero;
+        dpRT.offsetMax = new Vector2(0f, -(TabH + 1f));
+        _decreesPanel.AddComponent<Image>().color = Color.clear;
+
+        // Header label
+        var hdr = UIUtils.Label(_decreesPanel.transform, "Hdr", "◈  DECREES — spend Nano for permanent buffs", 9f,
+            UITheme.Magenta, FontStyles.Bold, TextAlignmentOptions.Left);
+        UIUtils.PinTop(hdr.GetComponent<RectTransform>(), 6f, 14f, 14f, 14f);
+
+        HLine(_decreesPanel.transform, "DecreesDiv",
+            new Color(UITheme.Magenta.r, UITheme.Magenta.g, UITheme.Magenta.b, 0.25f), true, 22f);
+
+        // ── Scrollable rows region ───────────────────────────────────────
+        var scrollGO = new GameObject("DecreesScroll");
+        scrollGO.transform.SetParent(_decreesPanel.transform, false);
+        var sRT = scrollGO.AddComponent<RectTransform>();
+        sRT.anchorMin = new Vector2(0f, 0f);
+        sRT.anchorMax = new Vector2(1f, 1f);
+        sRT.offsetMin = new Vector2(8f, 4f);
+        sRT.offsetMax = new Vector2(-8f, -26f);   // leave room for header
+        scrollGO.AddComponent<Image>().color = Color.clear;
+
+        var sr = scrollGO.AddComponent<ScrollRect>();
+        sr.horizontal      = false;
+        sr.vertical        = true;
+        sr.scrollSensitivity = 22f;
+        sr.movementType    = ScrollRect.MovementType.Elastic;
+        sr.elasticity      = 0.05f;
+
+        var vp = new GameObject("Viewport"); vp.transform.SetParent(scrollGO.transform, false);
+        var vpRT = vp.AddComponent<RectTransform>();
+        vpRT.anchorMin = Vector2.zero; vpRT.anchorMax = Vector2.one;
+        vpRT.offsetMin = Vector2.zero; vpRT.offsetMax = Vector2.zero;
+        vp.AddComponent<RectMask2D>();
+        sr.viewport = vpRT;
+
+        var content = new GameObject("Content"); content.transform.SetParent(vp.transform, false);
+        var cRT = content.AddComponent<RectTransform>();
+        cRT.anchorMin = new Vector2(0f, 1f); cRT.anchorMax = new Vector2(1f, 1f);
+        cRT.pivot     = new Vector2(0.5f, 1f);
+        cRT.anchoredPosition = Vector2.zero;
+        var vlg = content.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing = 4f;
+        vlg.childAlignment     = TextAnchor.UpperCenter;
+        vlg.childForceExpandWidth  = true;
+        vlg.childForceExpandHeight = false;
+        vlg.childControlWidth  = true;
+        vlg.childControlHeight = false;
+        vlg.padding = new RectOffset(0, 0, 0, 4);
+        var csf = content.AddComponent<ContentSizeFitter>();
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        sr.content = cRT;
+        _decreesContent = content.transform;
+
+        // Build all rows once; refresh paints state
+        foreach (var d in DecreeManager.All)
+            CreateDecreeRow(d);
+
+        _decreesPanel.SetActive(false);
+    }
+
+    void CreateDecreeRow(DecreeManager.Decree d)
+    {
+        var row = new GameObject("DecreeRow_" + d.id);
+        row.transform.SetParent(_decreesContent, false);
+        var rRT = row.AddComponent<RectTransform>();
+        rRT.sizeDelta = new Vector2(0f, 38f);
+        var rle = row.AddComponent<LayoutElement>();
+        rle.preferredHeight = 38f;
+        rle.minHeight = 38f;
+        UIUtils.Rounded(row, new Color(0.05f, 0.07f, 0.12f, 1f), UITheme.Rsm);
+
+        // Magenta left accent
+        var accent = new GameObject("Accent"); accent.transform.SetParent(row.transform, false);
+        var aRT = accent.AddComponent<RectTransform>();
+        aRT.anchorMin = new Vector2(0f, 0f); aRT.anchorMax = new Vector2(0f, 1f);
+        aRT.pivot = new Vector2(0f, 0.5f);
+        aRT.sizeDelta = new Vector2(2f, 0f);
+        accent.AddComponent<Image>().color = new Color(UITheme.Magenta.r, UITheme.Magenta.g, UITheme.Magenta.b, 0.55f);
+
+        // Name (top-left)
+        var name = UIUtils.Label(row.transform, "Name", d.name, 9.5f,
+            UITheme.TextHi, FontStyles.Bold, TextAlignmentOptions.Left);
+        var nRT = name.GetComponent<RectTransform>();
+        nRT.anchorMin = new Vector2(0f, 0.50f); nRT.anchorMax = new Vector2(0.65f, 1f);
+        nRT.offsetMin = new Vector2(8f, 0f); nRT.offsetMax = new Vector2(-2f, -2f);
+
+        // Description (bottom-left)
+        var desc = UIUtils.Label(row.transform, "Desc", d.description, 7.5f,
+            UITheme.TextLow, FontStyles.Italic, TextAlignmentOptions.Left);
+        desc.overflowMode = TextOverflowModes.Truncate;
+        var dRT = desc.GetComponent<RectTransform>();
+        dRT.anchorMin = new Vector2(0f, 0f); dRT.anchorMax = new Vector2(0.65f, 0.50f);
+        dRT.offsetMin = new Vector2(8f, 2f); dRT.offsetMax = new Vector2(-2f, 0f);
+
+        // Cost (top-right)
+        var cost = UIUtils.Label(row.transform, "Cost", $"{d.nanoCost} Nano", 9f,
+            UITheme.Green, FontStyles.Bold, TextAlignmentOptions.Right);
+        var coRT = cost.GetComponent<RectTransform>();
+        coRT.anchorMin = new Vector2(0.65f, 0.50f); coRT.anchorMax = new Vector2(1f, 1f);
+        coRT.offsetMin = new Vector2(2f, 0f); coRT.offsetMax = new Vector2(-8f, -2f);
+
+        // BUY button / ACTIVE badge (bottom-right)
+        var btnGO = new GameObject("Btn"); btnGO.transform.SetParent(row.transform, false);
+        var bRT = btnGO.AddComponent<RectTransform>();
+        bRT.anchorMin = new Vector2(0.65f, 0f); bRT.anchorMax = new Vector2(1f, 0.50f);
+        bRT.offsetMin = new Vector2(4f, 2f); bRT.offsetMax = new Vector2(-8f, -1f);
+        var bg = UIUtils.Rounded(btnGO, new Color(UITheme.Magenta.r * 0.20f, UITheme.Magenta.g * 0.20f, UITheme.Magenta.b * 0.20f, 1f), UITheme.Rsm);
+        var btn = btnGO.AddComponent<Button>();
+        btn.transition = Selectable.Transition.None;
+        string capturedId = d.id;
+        btn.onClick.AddListener(() => {
+            DecreeManager.Instance?.TryPurchase(capturedId);
+            // Purchase result handled via OnDecreePurchased event → RefreshDecreesPanel
+        });
+
+        var btnLbl = UIUtils.Label(btnGO.transform, "Lbl", "BUY", 9f,
+            UITheme.Magenta, FontStyles.Bold, TextAlignmentOptions.Center);
+        var blRT = btnLbl.GetComponent<RectTransform>();
+        blRT.anchorMin = Vector2.zero; blRT.anchorMax = Vector2.one; blRT.sizeDelta = Vector2.zero;
+
+        var btnET = btnGO.AddComponent<EventTrigger>();
+        AddHover(btnET,
+            () => bg.color = new Color(UITheme.Magenta.r * 0.35f, UITheme.Magenta.g * 0.35f, UITheme.Magenta.b * 0.35f, 1f),
+            () => RefreshDecreesPanel());  // resets to current state
+
+        _decreeRows.Add(new DecreeRow
+        {
+            id       = d.id,
+            buyBg    = bg,
+            buyLabel = btnLbl,
+            status   = cost,
+        });
+    }
+
+    void RefreshDecreesPanel()
+    {
+        if (DecreeManager.Instance == null) return;
+        foreach (var row in _decreeRows)
+        {
+            bool owned = DecreeManager.Instance.IsOwned(row.id);
+            // Find the original decree for cost lookup
+            int cost = 0;
+            foreach (var d in DecreeManager.All)
+                if (d.id == row.id) { cost = d.nanoCost; break; }
+
+            bool canAfford = ResourceManager.Instance != null &&
+                             ResourceManager.Instance.CanAfford(ResourceType.Nano, cost);
+
+            if (owned)
+            {
+                row.buyLabel.text = "✓ ACTIVE";
+                row.buyLabel.color = UITheme.Green;
+                row.buyBg.color = new Color(0.06f, 0.20f, 0.10f, 1f);
+            }
+            else if (canAfford)
+            {
+                row.buyLabel.text = "BUY";
+                row.buyLabel.color = UITheme.Magenta;
+                row.buyBg.color = new Color(UITheme.Magenta.r * 0.20f, UITheme.Magenta.g * 0.20f, UITheme.Magenta.b * 0.20f, 1f);
+            }
+            else
+            {
+                row.buyLabel.text = "BUY";
+                row.buyLabel.color = UITheme.TextMuted;
+                row.buyBg.color = new Color(0.10f, 0.10f, 0.12f, 1f);
+            }
+        }
+    }
 
     /// <summary>Creates a fixed-width button using the existing AddHover helper.</summary>
     GameObject MakeMenuButton(Transform parent, string label, Color col, float width,

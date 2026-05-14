@@ -23,6 +23,8 @@ MonoBehaviour:
   populationRequired: 40
   passiveResourceType: 3
   passiveRatePerMinute: 20
+  adjacencyBuildingType: Energy Generator
+  adjacencyBonus: 1.6
   maxLevel: 5
   upgradeCostScrap: 960000002c010000c800000090010000
   upgradeCostNano: 00000000000000003200000078000000

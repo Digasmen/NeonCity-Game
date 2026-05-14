@@ -103,8 +103,14 @@ public class VictoryScreen : MonoBehaviour
         hgImg.rectTransform.anchoredPosition = Vector2.zero;
         hgImg.rectTransform.sizeDelta        = new Vector2(0f, 1f);
 
+        bool canContinue = MilestoneManager.Instance.IsAtSectorBoundary();
+        int  nextSector  = MilestoneManager.Instance.NextSector;
+        string headerText = canContinue
+            ? $"SECTOR 0{MilestoneManager.Instance.CurrentSector}  COMPLETE"
+            : "SECTOR 04  SOVEREIGN";
+
         var titleLbl = UIUtils.Label(hdr.transform, "Title",
-            "NEON CITY  ESTABLISHED", 21f,
+            headerText, 21f,
             new Color(0f, 1f, 0.88f), FontStyles.Bold, TextAlignmentOptions.Center);
         var tRT = titleLbl.GetComponent<RectTransform>();
         tRT.anchorMin = new Vector2(0f, 0.45f); tRT.anchorMax = Vector2.one;
@@ -205,7 +211,15 @@ public class VictoryScreen : MonoBehaviour
 
         var btn = btnGO.AddComponent<Button>();
         btn.transition = Selectable.Transition.None;
-        btn.onClick.AddListener(() => SaveManager.Instance.NewGame());
+        GameObject overlayRef = overlay;
+        if (canContinue)
+            btn.onClick.AddListener(() =>
+            {
+                MilestoneManager.Instance.AdvanceToSector(nextSector);
+                Destroy(overlayRef);
+            });
+        else
+            btn.onClick.AddListener(() => SaveManager.Instance.NewGame());
 
         var bG  = btnGO.GetComponent<Graphic>();
         var bET = btnGO.AddComponent<EventTrigger>();
@@ -216,9 +230,28 @@ public class VictoryScreen : MonoBehaviour
         bx.callback.AddListener(_ => bG.color = new Color(0.04f, 0.30f, 0.58f));
         bET.triggers.Add(bx);
 
-        var btnLbl = UIUtils.Label(btnGO.transform, "Lbl", "PLAY AGAIN", 13f,
+        string btnText = canContinue ? $"CONTINUE TO SECTOR 0{nextSector}" : "PLAY AGAIN";
+        var btnLbl = UIUtils.Label(btnGO.transform, "Lbl", btnText, 13f,
             Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
         var blRT = btnLbl.GetComponent<RectTransform>();
         blRT.anchorMin = Vector2.zero; blRT.anchorMax = Vector2.one; blRT.sizeDelta = Vector2.zero;
+
+        // Secondary "NEW GAME" link below — only when offering Continue, so the user
+        // who wants to reset still has a clear escape hatch.
+        if (canContinue)
+        {
+            var ng = UIUtils.Label(card.transform, "NewGameLink",
+                "or start a NEW GAME", 9f, UIUtils.TextSub, FontStyles.Italic, TextAlignmentOptions.Center);
+            var ngRT = ng.GetComponent<RectTransform>();
+            ngRT.anchorMin        = new Vector2(0.5f, 0f);
+            ngRT.anchorMax        = new Vector2(0.5f, 0f);
+            ngRT.pivot            = new Vector2(0.5f, 0f);
+            ngRT.anchoredPosition = new Vector2(0f, 8f);
+            ngRT.sizeDelta        = new Vector2(220f, 14f);
+            var ngBtn = ng.gameObject.AddComponent<Button>();
+            ngBtn.transition = Selectable.Transition.None;
+            ngBtn.onClick.AddListener(() => SaveManager.Instance.NewGame());
+            ng.raycastTarget = true;
+        }
     }
 }

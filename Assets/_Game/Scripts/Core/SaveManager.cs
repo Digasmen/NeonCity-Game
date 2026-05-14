@@ -89,6 +89,10 @@ public class SaveManager : MonoBehaviour
         }
 
         data.milestoneIndex = MilestoneManager.Instance.CurrentIndex;
+        data.sector         = MilestoneManager.Instance.CurrentSector;
+
+        if (DecreeManager.Instance != null)
+            data.ownedDecrees = new List<string>(DecreeManager.Instance.OwnedIds);
 
         Vector3 cam = Camera.main.transform.position;
         data.cameraX = cam.x;
@@ -107,11 +111,16 @@ public class SaveManager : MonoBehaviour
         SaveData data = JsonUtility.FromJson<SaveData>(File.ReadAllText(SavePath));
         if (data == null) return;
 
+        if (data.saveVersion < 2)
+            Debug.Log("[SaveManager] Migrating save v1 → v2 (decrees + sector defaults applied)");
+
         foreach (var rd in data.resources)
             if (System.Enum.TryParse(rd.type, out ResourceType type))
                 ResourceManager.Instance.SetAmount(type, rd.amount);
 
         MilestoneManager.Instance.LoadFromIndex(data.milestoneIndex);
+        MilestoneManager.Instance.SetSector(data.sector > 0 ? data.sector : 1);
+        DecreeManager.Instance?.LoadFromSave(data.ownedDecrees);
 
         Debug.Log($"Loading {data.buildings.Count} buildings...");
         foreach (var bd in data.buildings)

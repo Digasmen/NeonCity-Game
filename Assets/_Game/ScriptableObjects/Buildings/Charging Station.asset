@@ -29,8 +29,8 @@ MonoBehaviour:
   passiveRatePerMinute: 0
   consumptionType: 1
   consumptionRatePerMinute: 50
-  adjacencyBuildingType: 
-  adjacencyBonus: 1.5
+  adjacencyBuildingType: Scout Hub
+  adjacencyBonus: 1.4
   maxLevel: 3
   upgradeCostScrap: fa000000c2010000
   upgradeCostNano: 000000004b000000

@@ -20,6 +20,19 @@ public class Building : MonoBehaviour
     private int        _activeMeshVariant = -1; // index into data.meshVariants; -1 = procedural
     private float      _activeRate;          // current production rate (includes adjacency bonus)
     private float      _consumptionRate;     // current consumption debit (always positive)
+    private float      _secondaryRate;       // secondary passive production (Bioreactor etc.; no adjacency)
+
+    /// <summary>Live production multiplier vs the level-only base rate.
+    /// Returns 1.0 when there's no passive production, no adjacency target, or no matching neighbors.</summary>
+    public float CurrentMultiplier
+    {
+        get
+        {
+            if (data == null || _activeRate <= 0f || data.passiveRatePerMinute <= 0f) return 1f;
+            float baseRate = data.passiveRatePerMinute * GetMultiplier(level);
+            return baseRate > 0f ? _activeRate / baseRate : 1f;
+        }
+    }
 
     public void Initialize(BuildingData buildingData)
     {
@@ -46,18 +59,27 @@ public class Building : MonoBehaviour
             gameObject.AddComponent<ChargingStation>();
         if (data.droneData != null) SpawnDrone();
 
-        // Production rate
+        // Production rate (decree bonus baked in before adjacency on first RefreshAdjacency)
         if (data.passiveRatePerMinute > 0f)
         {
-            _activeRate = data.passiveRatePerMinute * GetMultiplier(1);
-            ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate);
+            _activeRate = data.passiveRatePerMinute * GetMultiplier(1)
+                        * DecreeManager.GetRateBonusFor(data.buildingName);
+            ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate, this);
         }
 
-        // Consumption rate
+        // Consumption rate (decree may reduce e.g. Charging Station cold_sync)
         if (data.consumptionRatePerMinute > 0f)
         {
-            _consumptionRate = data.consumptionRatePerMinute;
-            ResourceManager.Instance.AddRate(data.consumptionType, -_consumptionRate);
+            _consumptionRate = data.consumptionRatePerMinute
+                             * DecreeManager.GetConsumptionMultFor(data.buildingName);
+            ResourceManager.Instance.AddRate(data.consumptionType, -_consumptionRate, this);
+        }
+
+        // Secondary passive (Bioreactor etc.) — flat, no adjacency, no decree mod
+        if (data.secondaryPassivePerMinute > 0f)
+        {
+            _secondaryRate = data.secondaryPassivePerMinute;
+            ResourceManager.Instance.AddRate(data.secondaryPassiveType, _secondaryRate, this);
         }
 
         gameObject.AddComponent<BuildingGlow>();
@@ -86,11 +108,12 @@ public class Building : MonoBehaviour
 
         if (_activeRate > 0f)
         {
-            ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate);
-            _activeRate = data.passiveRatePerMinute * GetMultiplier(level + 1);
+            ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate, this);
+            _activeRate = data.passiveRatePerMinute * GetMultiplier(level + 1)
+                        * DecreeManager.GetRateBonusFor(data.buildingName);
             // Preserve adjacency multiplier
             _activeRate = ApplyAdjacencyMultiplier(_activeRate);
-            ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate);
+            ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate, this);
         }
 
         level++;
@@ -104,15 +127,16 @@ public class Building : MonoBehaviour
         if (target == level) return;
 
         if (_activeRate > 0f)
-            ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate);
+            ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate, this);
 
         level = target;
 
         if (data.passiveRatePerMinute > 0f)
         {
-            _activeRate = data.passiveRatePerMinute * GetMultiplier(level);
+            _activeRate = data.passiveRatePerMinute * GetMultiplier(level)
+                        * DecreeManager.GetRateBonusFor(data.buildingName);
             _activeRate = ApplyAdjacencyMultiplier(_activeRate);
-            ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate);
+            ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate, this);
         }
 
         RefreshVisuals();
@@ -127,7 +151,8 @@ public class Building : MonoBehaviour
         if (data == null || _activeRate <= 0f ||
             string.IsNullOrEmpty(data.adjacencyBuildingType)) return;
 
-        float baseRate = data.passiveRatePerMinute * GetMultiplier(level);
+        float baseRate = data.passiveRatePerMinute * GetMultiplier(level)
+                       * DecreeManager.GetRateBonusFor(data.buildingName);
         float newRate  = ApplyAdjacencyMultiplier(baseRate);
 
         if (!Mathf.Approximately(newRate, _activeRate))
@@ -152,6 +177,80 @@ public class Building : MonoBehaviour
         // Each matching neighbor adds half the bonus, capped at 2 neighbors (full bonus)
         float mult = Mathf.Lerp(1f, data.adjacencyBonus, Mathf.Min(matches, 2) * 0.5f);
         return rate * mult;
+    }
+
+    // ── Decree integration ────────────────────────────────────────────────
+
+    /// <summary>Re-derive _activeRate and _consumptionRate from current decree state.
+    /// Called after a decree is purchased so existing buildings update without re-instantiation.</summary>
+    public void RecomputeRate()
+    {
+        if (data == null) return;
+
+        // Passive production
+        if (data.passiveRatePerMinute > 0f)
+        {
+            float baseRate = data.passiveRatePerMinute * GetMultiplier(level)
+                           * DecreeManager.GetRateBonusFor(data.buildingName);
+            float newRate  = ApplyAdjacencyMultiplier(baseRate);
+            if (!Mathf.Approximately(newRate, _activeRate))
+            {
+                ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate);
+                _activeRate = newRate;
+                ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate);
+            }
+        }
+
+        // Consumption
+        if (data.consumptionRatePerMinute > 0f)
+        {
+            float newCons = data.consumptionRatePerMinute
+                          * DecreeManager.GetConsumptionMultFor(data.buildingName);
+            if (!Mathf.Approximately(newCons, _consumptionRate))
+            {
+                ResourceManager.Instance.RemoveRate(data.consumptionType, -_consumptionRate);
+                _consumptionRate = newCons;
+                ResourceManager.Instance.AddRate(data.consumptionType, -_consumptionRate);
+            }
+        }
+    }
+
+    /// <summary>Walks every active Building and re-derives its rates. Cheap; called by DecreeManager on purchase/load.</summary>
+    public static void RecomputeAllRates()
+    {
+        foreach (var b in _all)
+            b?.RecomputeRate();
+    }
+
+    // ── Event-driven temporary modifiers ──────────────────────────────────
+
+    /// <summary>Brownout-style: zero out production for `duration`, then restore. Idempotent — safe to fire
+    /// while already stopped (just extends duration).</summary>
+    public IEnumerator ApplyEventStop(float duration)
+    {
+        if (_activeRate <= 0f) yield break;
+        float saved = _activeRate;
+        ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate);
+        _activeRate = 0f;
+        yield return new WaitForSeconds(duration);
+        if (this == null || data == null) yield break;
+        _activeRate = saved;
+        ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate);
+    }
+
+    /// <summary>Multiplies current rate by `mult` for `duration`, then restores.</summary>
+    public IEnumerator ApplyEventMultiplier(float mult, float duration)
+    {
+        if (_activeRate <= 0f) yield break;
+        float saved = _activeRate;
+        ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate);
+        _activeRate = saved * mult;
+        ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate);
+        yield return new WaitForSeconds(duration);
+        if (this == null || data == null) yield break;
+        ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate);
+        _activeRate = saved;
+        ResourceManager.Instance.AddRate(data.passiveResourceType, _activeRate);
     }
 
     // ── Upgrade helpers ───────────────────────────────────────────────────
@@ -247,6 +346,8 @@ public class Building : MonoBehaviour
                 ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate);
             if (_consumptionRate > 0f)
                 ResourceManager.Instance.RemoveRate(data.consumptionType, -_consumptionRate);
+            if (_secondaryRate > 0f)
+                ResourceManager.Instance.RemoveRate(data.secondaryPassiveType, _secondaryRate);
         }
         if (spawnedDrone != null) Destroy(spawnedDrone);
         GridManager.Instance?.UnregisterBuilding(gridCell);

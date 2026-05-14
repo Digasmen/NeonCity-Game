@@ -23,6 +23,8 @@ MonoBehaviour:
   populationRequired: 0
   passiveResourceType: 0
   passiveRatePerMinute: 0
+  adjacencyBuildingType: Scrap Collector
+  adjacencyBonus: 1.4
   maxLevel: 5
   upgradeCostScrap: 960000002c010000c800000090010000
   upgradeCostNano: 00000000000000003200000078000000

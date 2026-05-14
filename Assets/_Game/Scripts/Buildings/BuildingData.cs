@@ -76,6 +76,11 @@ public class BuildingData : ScriptableObject
     public ResourceType passiveResourceType;
     public float passiveRatePerMinute = 0f;
 
+    [Header("Secondary Passive (optional)")]
+    [Tooltip("Some late-game buildings (e.g. Bioreactor) produce two resources at once. Leave rate at 0 to disable.")]
+    public ResourceType secondaryPassiveType;
+    public float secondaryPassivePerMinute = 0f;
+
     [Header("Resource Consumption")]
     [Tooltip("Resource this building drains over time (e.g. Energy for a Data Tower).")]
     public ResourceType consumptionType;
