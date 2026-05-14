@@ -23,12 +23,12 @@ public class ResourceManager : MonoBehaviour
 
     public List<Resource> resources = new List<Resource>
     {
-        new Resource { type = ResourceType.Scrap,      amount = 200, maxAmount = 2000 },
-        new Resource { type = ResourceType.Energy,     amount = 100, maxAmount = 1000 },
-        new Resource { type = ResourceType.Polymer,    amount = 0,   maxAmount = 500  },
-        new Resource { type = ResourceType.Data,       amount = 0,   maxAmount = 500  },
-        new Resource { type = ResourceType.Population, amount = 0,   maxAmount = 300  },
-        new Resource { type = ResourceType.Nano,       amount = 0,   maxAmount = 1000 }
+        new Resource { type = ResourceType.Scrap,      amount = 200, maxAmount = 20000 },
+        new Resource { type = ResourceType.Energy,     amount = 100, maxAmount = 10000 },
+        new Resource { type = ResourceType.Polymer,    amount = 0,   maxAmount = 5000  },
+        new Resource { type = ResourceType.Data,       amount = 0,   maxAmount = 5000  },
+        new Resource { type = ResourceType.Population, amount = 0,   maxAmount = 3000  },
+        new Resource { type = ResourceType.Nano,       amount = 0,   maxAmount = 10000 }
     };
 
     // ── History ring buffer (1 sample/s, 60 s window) ─────────────────────
@@ -64,13 +64,13 @@ public class ResourceManager : MonoBehaviour
 
     static float DefaultMaxFor(ResourceType type) => type switch
     {
-        ResourceType.Scrap      => 2000f,
-        ResourceType.Energy     => 1000f,
-        ResourceType.Polymer    => 500f,
-        ResourceType.Data       => 500f,
-        ResourceType.Population => 300f,
-        ResourceType.Nano       => 1000f,
-        _                       => 500f,
+        ResourceType.Scrap      => 20000f,
+        ResourceType.Energy     => 10000f,
+        ResourceType.Polymer    => 5000f,
+        ResourceType.Data       => 5000f,
+        ResourceType.Population => 3000f,
+        ResourceType.Nano       => 10000f,
+        _                       => 5000f,
     };
 
     void Update()

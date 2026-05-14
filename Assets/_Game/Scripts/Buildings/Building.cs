@@ -22,6 +22,10 @@ public class Building : MonoBehaviour
     private float      _consumptionRate;     // current consumption debit (always positive)
     private float      _secondaryRate;       // secondary passive production (Bioreactor etc.; no adjacency)
 
+    /// <summary>The point light that illuminates this building's surroundings.
+    /// Spawned once in Initialize(); BuildingGlow pulses its intensity.</summary>
+    public Light BuildingLight { get; private set; }
+
     /// <summary>Live production multiplier vs the level-only base rate.
     /// Returns 1.0 when there's no passive production, no adjacency target, or no matching neighbors.</summary>
     public float CurrentMultiplier
@@ -51,7 +55,7 @@ public class Building : MonoBehaviour
             var pb = GetComponent<ProceduralBuilding>();
             if (pb != null) Destroy(pb);
             _activeMeshVariant = varIdx;
-            _meshChild = SpawnMeshChild(data.meshVariants[varIdx], TextureForVariant(varIdx));
+            _meshChild = SpawnMeshChild(data.meshVariants[varIdx], TextureForVariant(varIdx), ScaleMultiplierForVariant(varIdx));
             EnsureRootCollider();
         }
 
@@ -82,6 +86,7 @@ public class Building : MonoBehaviour
             ResourceManager.Instance.AddRate(data.secondaryPassiveType, _secondaryRate, this);
         }
 
+        SpawnBuildingLight();
         gameObject.AddComponent<BuildingGlow>();
         var label = gameObject.AddComponent<BuildingLabel>();
         label.Setup(this);
@@ -288,7 +293,7 @@ public class Building : MonoBehaviour
             {
                 if (_meshChild != null) Destroy(_meshChild);
                 _meshChild = targetIdx >= 0
-                    ? SpawnMeshChild(data.meshVariants[targetIdx], TextureForVariant(targetIdx))
+                    ? SpawnMeshChild(data.meshVariants[targetIdx], TextureForVariant(targetIdx), ScaleMultiplierForVariant(targetIdx))
                     : null;
                 _activeMeshVariant = targetIdx;
             }
@@ -306,7 +311,15 @@ public class Building : MonoBehaviour
         data.textureVariants != null && idx < data.textureVariants.Length
             ? data.textureVariants[idx] : null;
 
-    GameObject SpawnMeshChild(GameObject prefab, Texture2D texture = null)
+    // ── Helper: resolve per-variant scale multiplier from BuildingData ────────
+    float ScaleMultiplierForVariant(int varIdx)
+    {
+        if (data.meshScaleMultipliers != null && varIdx < data.meshScaleMultipliers.Length)
+            return Mathf.Max(0.05f, data.meshScaleMultipliers[varIdx]);
+        return 1f;
+    }
+
+    GameObject SpawnMeshChild(GameObject prefab, Texture2D texture = null, float scaleMultiplier = 1f)
     {
         var child = Instantiate(prefab, transform);
         child.transform.localPosition = Vector3.zero;
@@ -315,15 +328,18 @@ public class Building : MonoBehaviour
             Destroy(col);
 
         // Auto-scale to fit the grid cell footprint regardless of the FBX's export scale.
+        // Set localScale=1 first so bounds are measured at a consistent reference scale,
+        // then apply the cell-fit factor and any per-variant override multiplier.
         var renderers = child.GetComponentsInChildren<Renderer>();
         if (renderers.Length > 0)
         {
+            child.transform.localScale = Vector3.one;
             Bounds b = renderers[0].bounds;
             for (int i = 1; i < renderers.Length; i++) b.Encapsulate(renderers[i].bounds);
             float footprint = Mathf.Max(b.size.x, b.size.z);
             if (footprint > 0.001f)
                 child.transform.localScale = Vector3.one *
-                    (GridManager.Instance.cellSize * 0.9f / footprint);
+                    (GridManager.Instance.cellSize * 0.9f / footprint) * scaleMultiplier;
         }
 
         if (texture != null)
@@ -343,11 +359,11 @@ public class Building : MonoBehaviour
         if (data != null)
         {
             if (_activeRate > 0f)
-                ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate);
+                ResourceManager.Instance.RemoveRate(data.passiveResourceType, _activeRate, this);
             if (_consumptionRate > 0f)
-                ResourceManager.Instance.RemoveRate(data.consumptionType, -_consumptionRate);
+                ResourceManager.Instance.RemoveRate(data.consumptionType, -_consumptionRate, this);
             if (_secondaryRate > 0f)
-                ResourceManager.Instance.RemoveRate(data.secondaryPassiveType, _secondaryRate);
+                ResourceManager.Instance.RemoveRate(data.secondaryPassiveType, _secondaryRate, this);
         }
         if (spawnedDrone != null) Destroy(spawnedDrone);
         GridManager.Instance?.UnregisterBuilding(gridCell);
@@ -450,6 +466,25 @@ public class Building : MonoBehaviour
         // Colliders — drones shouldn't trigger physics or block placement raycasts
         foreach (var col in droneObj.GetComponentsInChildren<Collider>(true))
             Destroy(col);
+    }
+
+    // ── Building light ─────────────────────────────────────────────────────────
+
+    void SpawnBuildingLight()
+    {
+        var lightGO = new GameObject("GlowLight");
+        lightGO.transform.SetParent(transform);
+        lightGO.transform.localPosition = new Vector3(0f, 1.8f, 0f);
+
+        var l = lightGO.AddComponent<Light>();
+        l.type      = LightType.Point;
+        l.color     = data != null ? data.glowColor : Color.cyan;
+        l.intensity = 0f;           // BuildingGlow drives this; starts at zero
+        l.range     = 5f;
+        l.shadows   = LightShadows.None;
+        l.renderMode = LightRenderMode.Auto;
+
+        BuildingLight = l;
     }
 
     ResourceNode FindNearestNode(ResourceType type)

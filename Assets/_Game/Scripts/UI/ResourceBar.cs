@@ -34,6 +34,7 @@ public class ResourceBar : MonoBehaviour
         public TextMeshProUGUI value;
         public TextMeshProUGUI rate;
         public Graphic         bg;
+        public RectTransform   chipRT;
         public float           lastValue;
         public float           flashTimer;
     }
@@ -81,7 +82,7 @@ public class ResourceBar : MonoBehaviour
         var rt = chipGO.AddComponent<RectTransform>();
         rt.sizeDelta = new Vector2(ChipW, ChipH);
 
-        var bg = UIUtils.Rounded(chipGO, UITheme.Bg600, UITheme.Rsm, raycastable: false);
+        var bg = UIUtils.Rounded(chipGO, UITheme.Bg600, UITheme.Rsm, raycastable: true);
 
         // 1px inner border for definition (separate Graphic, slightly inset)
         var border = new GameObject("Border");
@@ -153,12 +154,24 @@ public class ResourceBar : MonoBehaviour
         rRT.offsetMax = new Vector2(-UITheme.S2, 0f);
         rateLbl.alignment = TextAlignmentOptions.BottomRight;
 
+        // ── Tap-to-breakdown button ───────────────────────────────────────
+        var btn = chipGO.AddComponent<Button>();
+        btn.transition = Selectable.Transition.None;
+        ResourceType capturedType = type;
+        var capturedRT = rt;
+        btn.onClick.AddListener(() =>
+        {
+            if (ProductionBreakdownPopup.Instance != null)
+                ProductionBreakdownPopup.Instance.Toggle(capturedType, capturedRT);
+        });
+
         return new Chip
         {
             type      = type,
             value     = valueLbl,
             rate      = rateLbl,
             bg        = bg,
+            chipRT    = rt,
             lastValue = 0f,
         };
     }

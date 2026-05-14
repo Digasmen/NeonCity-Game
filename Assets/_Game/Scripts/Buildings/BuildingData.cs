@@ -16,6 +16,9 @@ public class BuildingData : ScriptableObject
     public int[] meshVariantLevels;
     [Tooltip("Optional albedo texture override per variant (same index as meshVariants). Leave a slot null to keep the FBX's own material.")]
     public Texture2D[] textureVariants;
+    [Tooltip("Per-variant scale multiplier on top of auto cell-fit. Default 1 = no change. " +
+             "Increase (e.g. 1.5) if a variant auto-scales too small due to a large FBX footprint.")]
+    public float[] meshScaleMultipliers;
 
     /// <summary>Returns the FBX prefab whose level threshold is the highest one still <= level,
     /// or null if no variants are configured (falls back to procedural).</summary>

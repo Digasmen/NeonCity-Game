@@ -7,13 +7,15 @@ public class BuildingLabel : MonoBehaviour
     Building _building;
     Camera _cam;
     Transform _labelRoot;
+    CanvasGroup _labelCG;
     TextMeshProUGUI _nameText;
     TextMeshProUGUI _levelText;
     TextMeshProUGUI _rateText;
     Image _dot;
+    bool _isVisible = false;
 
     const float LabelHeight  = 2.3f;
-    const float CanvasScale  = 0.010f;
+    const float CanvasScale  = 0.012f;
 
     public void Setup(Building building)
     {
@@ -40,11 +42,14 @@ public class BuildingLabel : MonoBehaviour
         Canvas canvas = root.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;
         RectTransform cr = root.GetComponent<RectTransform>();
-        cr.sizeDelta = new Vector2(200, 58);
+        cr.sizeDelta = new Vector2(220, 66);
+        _labelCG = root.AddComponent<CanvasGroup>();
+        _labelCG.blocksRaycasts = false;
+        _labelCG.alpha = 0f;  // hidden by default; shown on click via BuildingPopup
 
         // Background
         Image bg = root.AddComponent<Image>();
-        bg.color = new Color(0.01f, 0.02f, 0.10f, 0.96f);
+        bg.color = new Color(0.03f, 0.04f, 0.14f, 0.97f);
 
         // Accent line at bottom (building glow color)
         var pb = GetComponent<ProceduralBuilding>();
@@ -86,7 +91,7 @@ public class BuildingLabel : MonoBehaviour
         nr.offsetMin = new Vector2(22, 3); nr.offsetMax = new Vector2(-2, -4);
         _nameText = nameGO.AddComponent<TextMeshProUGUI>();
         _nameText.text      = _building.data.buildingName.ToUpper();
-        _nameText.fontSize  = 14;
+        _nameText.fontSize  = 16;
         _nameText.fontStyle = FontStyles.Bold;
         _nameText.alignment = TextAlignmentOptions.Left;
         _nameText.color     = Color.white;
@@ -109,7 +114,7 @@ public class BuildingLabel : MonoBehaviour
         lvr.offsetMin = Vector2.zero; lvr.offsetMax = Vector2.zero;
         _levelText = lvlGO.AddComponent<TextMeshProUGUI>();
         _levelText.text      = $"Lv.{_building.level}";
-        _levelText.fontSize  = 11;
+        _levelText.fontSize  = 13;
         _levelText.fontStyle = FontStyles.Bold;
         _levelText.alignment = TextAlignmentOptions.Center;
         _levelText.color     = Color.white;
@@ -121,9 +126,9 @@ public class BuildingLabel : MonoBehaviour
         rr.anchorMin = new Vector2(0, 0f); rr.anchorMax = new Vector2(0.72f, 0.46f);
         rr.offsetMin = new Vector2(22, 4); rr.offsetMax = new Vector2(-2, -2);
         _rateText = rateGO.AddComponent<TextMeshProUGUI>();
-        _rateText.fontSize  = 10;
+        _rateText.fontSize  = 12;
         _rateText.alignment = TextAlignmentOptions.Left;
-        _rateText.color     = new Color(0.35f, 1f, 0.60f);
+        _rateText.color     = new Color(0.5f, 1f, 0.72f);
         _rateText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         UpdateRate();
     }
@@ -145,10 +150,32 @@ public class BuildingLabel : MonoBehaviour
         }
     }
 
+    /// <summary>Show this label (called by BuildingPopup when the building is clicked).</summary>
+    public void Show()
+    {
+        _isVisible = true;
+    }
+
+    /// <summary>Hide this label (called by BuildingPopup on deselect / click-away).</summary>
+    public void Hide()
+    {
+        _isVisible = false;
+    }
+
     void LateUpdate()
     {
         if (_cam == null) _cam = Camera.main;
+
+        // Always face the camera
         if (_labelRoot != null)
             _labelRoot.rotation = _cam.transform.rotation;
+
+        // Smooth fade: visible → full opacity (boosted at night), hidden → 0
+        if (_labelCG != null)
+        {
+            float night = DayNightCycle.Instance != null ? DayNightCycle.Instance.NightAmount : 0f;
+            float targetAlpha = _isVisible ? Mathf.Lerp(0.88f, 1f, night) : 0f;
+            _labelCG.alpha = Mathf.Lerp(_labelCG.alpha, targetAlpha, Time.deltaTime * 12f);
+        }
     }
 }

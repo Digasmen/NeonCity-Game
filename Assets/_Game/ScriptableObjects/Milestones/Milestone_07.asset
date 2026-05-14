@@ -20,5 +20,5 @@ MonoBehaviour:
   secondTargetAmount: 0
   buildingCountTarget: 5
   buildingCountName: Server Farm
-  buildingToUnlock: {fileID: 11400000, guid: f1e2d3c4b5a678901234567fedcba0987, type: 2}
+  buildingToUnlock: {fileID: 11400000, guid: f2e3d4c5b6a7908132435465f7e8d9c0, type: 2}
   completionMessage: Bio-recycling plants come online.

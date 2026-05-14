@@ -11,12 +11,22 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 373869dafb09ec74cbd54015ea70662b, type: 3}
   m_Name: Bioreactor
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   buildingName: Bioreactor
-  glowColor: {r: 0.68, g: 0.40, b: 1.00, a: 1.00}
-  meshVariants: []
-  meshVariantLevels:
-  textureVariants: []
+  glowColor: {r: 0.68, g: 0.4, b: 1, a: 1}
+  meshVariants:
+  - {fileID: 919132149155446097, guid: e5f31871b5754b44c91b9d6898e5989b, type: 3}
+  - {fileID: 5757971925323620318, guid: 093497143fcc2f945a784807d468685b, type: 3}
+  - {fileID: 5941776204452795968, guid: 2498f3c59eabd2a43889a6e1d1d0c556, type: 3}
+  meshVariantLevels: 010000000300000005000000
+  textureVariants:
+  - {fileID: 2800000, guid: dcab60159d0d02a4fb399c53bf7e8062, type: 3}
+  - {fileID: 2800000, guid: 3e6d143be9f50ea4687300fb71649990, type: 3}
+  - {fileID: 2800000, guid: abf446f37d80fdd46927c81b67abae02, type: 3}
+  meshScaleMultipliers:
+  - 1
+  - 1.5
+  - 2
   width: 1
   height: 1
   scrapCost: 350

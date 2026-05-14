@@ -28,7 +28,10 @@ public class VictoryScreen : MonoBehaviour
 
     IEnumerator ShowSequence()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        // Find only the Screen Space Overlay canvas — NOT the world-space BuildingPopupCanvas
+        Canvas canvas = null;
+        foreach (var c in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+            if (c.renderMode == RenderMode.ScreenSpaceOverlay) { canvas = c; break; }
         if (canvas == null) yield break;
 
         // ── Dark overlay ──────────────────────────────────────────────────

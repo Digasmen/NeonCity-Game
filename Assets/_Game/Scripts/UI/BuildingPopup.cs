@@ -178,6 +178,10 @@ public class BuildingPopup : MonoBehaviour
 
     public void Show(Building building)
     {
+        // Hide the label on any previously selected building
+        if (currentBuilding != null && currentBuilding != building)
+            currentBuilding.GetComponent<BuildingLabel>()?.Hide();
+
         currentBuilding = building;
         RefreshAll();
 
@@ -186,12 +190,18 @@ public class BuildingPopup : MonoBehaviour
 
         _canvasGO.transform.position = PopupWorldPos(building);
         _canvasGO.SetActive(true);
+
+        // Show the label above the newly selected building
+        building.GetComponent<BuildingLabel>()?.Show();
     }
 
     public void Hide()
     {
         HideRemoveConfirm();
         _canvasGO.SetActive(false);
+
+        // Hide the label on the building we're deselecting
+        currentBuilding?.GetComponent<BuildingLabel>()?.Hide();
         currentBuilding = null;
     }
 

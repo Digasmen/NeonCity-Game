@@ -22,10 +22,12 @@ public class SoundManager : MonoBehaviour
     private AudioSource sfxSource;
     private AudioSource ambientSource;
     private AudioSource uiSource;
+    private AudioSource _nightLayer;
 
     private AudioClip generatedPlace;
     private AudioClip generatedMilestone;
     private AudioClip generatedAmbient;
+    private AudioClip generatedNightAmbient;
     private AudioClip generatedUIClick;
     private AudioClip generatedEventAlert;
     private AudioClip generatedUpgrade;
@@ -48,6 +50,11 @@ public class SoundManager : MonoBehaviour
 
         uiSource = gameObject.AddComponent<AudioSource>();
         uiSource.playOnAwake = false;
+
+        _nightLayer = gameObject.AddComponent<AudioSource>();
+        _nightLayer.loop        = true;
+        _nightLayer.volume      = 0f;
+        _nightLayer.playOnAwake = false;
     }
 
     void Start()
@@ -55,12 +62,16 @@ public class SoundManager : MonoBehaviour
         generatedPlace      = GenerateBlip(700f, 300f, 0.15f);
         generatedMilestone  = GenerateChord();
         generatedAmbient    = GenerateAmbient();
+        generatedNightAmbient = GenerateAmbientNight();
         generatedUIClick    = GenerateUIClick();
         generatedEventAlert = GenerateEventAlert();
         generatedUpgrade    = GenerateUpgrade();
 
         ambientSource.clip = ambientClip != null ? ambientClip : generatedAmbient;
         ambientSource.Play();
+
+        _nightLayer.clip = generatedNightAmbient;
+        _nightLayer.Play();
 
         MilestoneManager.Instance.OnMilestoneCompleted += _ => PlayMilestone();
     }
@@ -80,6 +91,11 @@ public class SoundManager : MonoBehaviour
         // Volume also gently rises with building activity
         float targetVol = Mathf.Clamp(ambientVolume + count * 0.004f, ambientVolume, ambientVolume * 2.5f);
         ambientSource.volume = Mathf.Lerp(ambientSource.volume, targetVol, Time.deltaTime * 0.3f);
+
+        // Night layer fades in with NightAmount
+        float nightAmt     = DayNightCycle.Instance != null ? DayNightCycle.Instance.NightAmount : 0f;
+        float nightTargetV = nightAmt * ambientVolume * 1.5f;
+        _nightLayer.volume = Mathf.Lerp(_nightLayer.volume, nightTargetV, Time.deltaTime * 0.5f);
     }
 
     // ── Public SFX API ────────────────────────────────────────────────────
@@ -245,6 +261,26 @@ public class SoundManager : MonoBehaviour
                     * (0.8f + 0.2f * Mathf.Sin(2 * Mathf.PI * 0.2f * t));
         }
         var clip = AudioClip.Create("Ambient", samples, 1, rate, true);
+        clip.SetData(data, 0);
+        return clip;
+    }
+
+    // Deep night-time drone — lower fundamental, slower modulation, sub-bass feel
+    AudioClip GenerateAmbientNight()
+    {
+        int rate    = 44100;
+        int samples = rate * 10;  // 10-second loop for smoother cycling
+        float[] data = new float[samples];
+        for (int i = 0; i < samples; i++)
+        {
+            float t   = (float)i / rate;
+            float mod = 0.75f + 0.25f * Mathf.Sin(2 * Mathf.PI * 0.10f * t);  // 0.1 Hz modulation
+            data[i] = (Mathf.Sin(2 * Mathf.PI * 33f * t) * 0.32f
+                     + Mathf.Sin(2 * Mathf.PI * 66f * t) * 0.16f
+                     + Mathf.Sin(2 * Mathf.PI * 99f * t) * 0.08f
+                     + Mathf.Sin(2 * Mathf.PI * 44f * t) * 0.06f) * mod;
+        }
+        var clip = AudioClip.Create("AmbientNight", samples, 1, rate, true);
         clip.SetData(data, 0);
         return clip;
     }

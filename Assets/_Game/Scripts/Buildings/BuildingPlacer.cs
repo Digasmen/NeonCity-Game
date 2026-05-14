@@ -184,6 +184,14 @@ public class BuildingPlacer : MonoBehaviour
         if (System.Array.IndexOf(_dropBuildings, currentData.buildingName) >= 0)
             StartCoroutine(DropAnimation(placed, worldPos));
 
+        // Offer undo for 3 seconds
+        UndoToast.Instance?.ShowUndo(new UndoToast.Snapshot
+        {
+            building    = building,
+            scrapRefund = currentData.scrapCost,
+            cell        = cell,
+        });
+
         isPlacing = false;
         currentData = null;
         _haloPreview?.Clear();

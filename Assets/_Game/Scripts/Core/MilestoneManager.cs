@@ -110,7 +110,7 @@ public class MilestoneManager : MonoBehaviour
 
     public int NextSector => currentSector + 1;
 
-    void CompleteCurrent()
+    public void CompleteCurrent()
     {
         MilestoneData completed = Current;
 

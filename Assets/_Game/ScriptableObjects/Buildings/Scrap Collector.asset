@@ -13,14 +13,15 @@ MonoBehaviour:
   m_Name: Scrap Collector
   m_EditorClassIdentifier: 
   buildingName: Scrap Collector
+  glowColor: {r: 0, g: 1, b: 1, a: 1}
   meshVariants:
-  - {fileID: 7487634118012064125, guid: 0a52abee676ce1249b0d6993e0fbe464, type: 3}
-  - {fileID: 4402779284890409053, guid: 3ee95b5789a022a4b8b0042cc9875fb1, type: 3}
-  - {fileID: 2103500506718073353, guid: 3d1a0ab361cbd0149b9f9dbd90c59919, type: 3}
+  - {fileID: 919132149155446097, guid: 146aac34cd1887749ad71b13e8bc5172, type: 3}
+  - {fileID: 919132149155446097, guid: d0a3f2e9ca4212e4bb9c86da5dc7f51a, type: 3}
+  - {fileID: 919132149155446097, guid: 3f8bd869abfe873499c48364dcc52767, type: 3}
   meshVariantLevels: 010000000300000005000000
   textureVariants:
   - {fileID: 2800000, guid: abf446f37d80fdd46927c81b67abae02, type: 3}
-  - {fileID: 2800000, guid: b62581a9b6f98534495a0c5471626882, type: 3}
+  - {fileID: 2800000, guid: abf446f37d80fdd46927c81b67abae02, type: 3}
   - {fileID: 2800000, guid: 886a498b2799d904ea00b112b6ed6177, type: 3}
   width: 1
   height: 1
@@ -32,6 +33,8 @@ MonoBehaviour:
   populationRequired: 0
   passiveResourceType: 0
   passiveRatePerMinute: 0
+  secondaryPassiveType: 0
+  secondaryPassivePerMinute: 0
   consumptionType: 0
   consumptionRatePerMinute: 0
   adjacencyBuildingType: Energy Generator
