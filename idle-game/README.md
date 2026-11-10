@@ -29,7 +29,9 @@ npm run build && node scripts/smoke.mjs dist/index.html <pasta-para-capturas>
 - Mini-jogo **Quebrar o ICE** (memória de sequência, 3 rondas) que dá lucro x2 ou x3 temporário e créditos.
 - Drone de carga perdido que atravessa a torre de vez em quando; tocar-lhe dá créditos.
 - **Reboot** (prestige): troca a torre por Chips de Memória, +5% de lucro permanente cada.
-- Ganhos offline até 2 horas e gravação automática em `localStorage`.
+- **Heat**: a partir do segundo piso, cada piso pode passar a ILEGAL (produção x3, Heat a subir). Subornos baixam o Heat; aos 100 há uma **rusga** e tens 10s para abater os drones da polícia, senão perdes a carga do cais e os pisos ilegais ficam selados 45s.
+- Ganhos offline até 2 horas e gravação automática em `localStorage`. Offline, os pisos ilegais trabalham ao ritmo legal e o Heat desce.
+- Animações e som: fundo de cidade com chuva, bots a carregar caixas, contador de créditos animado, botões que enchem até ao custo, efeitos sonoros sintetizados (desligáveis no Menu).
 
 ## Estrutura
 
@@ -40,15 +42,17 @@ npm run build && node scripts/smoke.mjs dist/index.html <pasta-para-capturas>
 | `src/game/save.ts` | Gravação e leitura do progresso. |
 | `src/ui/ui.ts` | Ecrã principal: HUD, torre, painel do elevador e do terminal, modais. |
 | `src/ui/hack.ts` | Mini-jogo de hacking. |
+| `src/ui/fx.ts` | Efeitos visuais e fundo animado. |
+| `src/ui/sfx.ts` | Efeitos sonoros (WebAudio). |
 | `tests/sim.test.ts` | Testes da simulação e um bot que mede o ritmo de progressão. |
 
 Para afinar o equilíbrio, as constantes estão no bloco "Equilíbrio" de `sim.ts`. Na consola do browser, `neon.state` dá acesso ao estado do jogo.
 
 ## Ideias para a seguir
 
-- **Heat**: pisos ilegais rendem mais mas atraem rusgas da polícia corporativa.
 - **Facções** (Corpos, Gangues, Netrunners) com gestores exclusivos por Reboot.
 - Árvore de implantes onde gastar os chips.
-- Mais mini-jogos: corrida de drones, leilão do mercado negro, defesa contra rusga.
+- Mais mini-jogos: corrida de drones, leilão do mercado negro.
+- Fachadas legais e outros upgrades que mexem no Heat.
 - Segunda torre e mercado negro rotativo com ofertas temporárias.
 - Som e arte própria para pisos e personagens.

@@ -1,4 +1,5 @@
 import { h, openModal } from './dom';
+import { sfx } from './sfx';
 
 const ROUNDS = [4, 5, 6]; // nós a memorizar em cada ronda
 const CELLS = 16;
@@ -62,6 +63,7 @@ export function openHack(onDone: (cleared: number) => void): void {
     for (const idx of order) {
       if (!alive) return;
       cells[idx].classList.add('lit');
+      sfx.node(idx % 8);
       await wait(420);
       cells[idx].classList.remove('lit');
       await wait(110);
@@ -87,6 +89,7 @@ export function openHack(onDone: (cleared: number) => void): void {
         if (over || !alive) return;
         if (idx === order[step]) {
           c.classList.add('ok');
+          sfx.node(idx % 8);
           c.disabled = true;
           step++;
           if (step === len) {

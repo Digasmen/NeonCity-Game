@@ -3,6 +3,7 @@ import { FLOORS } from './data';
 /*
  * Simulação da cadeia vertical: PISOS produzem carga -> o ELEVADOR recolhe-a
  * para o cais -> o TERMINAL vende-a por créditos. O mais lento dos três é o gargalo.
+ * Pisos em modo ilegal produzem mais mas sobem o Heat; aos 100 há uma rusga.
  * Este módulo não toca no DOM, para poder ser testado e reequilibrado à parte.
  */
 
@@ -14,6 +15,7 @@ export interface FloorState {
   progress: number; // 0..1 do ciclo actual
   working: boolean;
   manager: boolean;
+  illegal?: boolean;
 }
 
 export type ElevPhase = 'idle' | 'up' | 'load' | 'down' | 'unload';
@@ -39,14 +41,35 @@ export interface GameState {
   hackMult: number;
   hackReady: number;
   nextDrone: number;
+  heat: number; // 0..100
+  /** Rusga em curso: drones por abater e hora limite. */
+  raid: { until: number; left: number; total: number } | null;
+  /** Até esta hora os pisos ilegais estão selados pela polícia. */
+  sealedUntil: number;
+  raidsWon: number;
   savedAt: number;
 }
 
-function newFloor(manager = false): FloorState {
-  return { level: 1, stock: 0, progress: 0, working: false, manager };
+/** Acontecimentos da simulação, para a interface animar. Não fazem parte do estado gravado. */
+export type SimEvent =
+  | { type: 'cycle'; floor: number }
+  | { type: 'load'; floor: number }
+  | { type: 'unload' }
+  | { type: 'sale'; gain: number }
+  | { type: 'raidStart' }
+  | { type: 'raidWon' }
+  | { type: 'raidFail'; lost: number };
+export const events: SimEvent[] = [];
+function emit(e: SimEvent): void {
+  if (events.length > 200) events.length = 0; // ninguém está a consumir (testes)
+  events.push(e);
 }
 
-export function newState(chips = 0, totalEarned = 0, reboots = 0, hacks = 0): GameState {
+function newFloor(manager = false): FloorState {
+  return { level: 1, stock: 0, progress: 0, working: false, manager, illegal: false };
+}
+
+export function newState(chips = 0, totalEarned = 0, reboots = 0, hacks = 0, raidsWon = 0): GameState {
   return {
     v: 1,
     clock: 0,
@@ -67,6 +90,10 @@ export function newState(chips = 0, totalEarned = 0, reboots = 0, hacks = 0): Ga
     hackMult: 1,
     hackReady: 0,
     nextDrone: 50,
+    heat: 0,
+    raid: null,
+    sealedUntil: 0,
+    raidsWon,
     savedAt: Date.now(),
   };
 }
@@ -80,6 +107,15 @@ export const OC_DURATION = 30;
 export const OC_COOLDOWN = 180;
 export const ELEV_MANAGER_COST = 40;
 export const TERM_MANAGER_COST = 60;
+
+export const ILLEGAL_MULT = 3;
+export const HEAT_UNLOCK_FLOORS = 2;
+const HEAT_PER_FLOOR = 0.9; // por segundo, por piso ilegal a trabalhar
+const HEAT_DECAY = 0.6; // por segundo, sempre
+export const HEAT_WARN = 75;
+export const RAID_TIME = 10;
+export const SEAL_TIME = 45;
+export const BRIBE_DROP = 35;
 
 const FLOOR_GROWTH = 1.14;
 const STATION_GROWTH = 1.215;
@@ -100,7 +136,7 @@ export const floorUnlockCost = (i: number) => (i === 0 ? 0 : 100 * Math.pow(22, 
 export const floorManagerCost = (i: number) => 60 * Math.pow(22, i);
 /** Custo de subir do nível `level` para `level + 1`. */
 export const floorLevelCost = (i: number, level: number) => 8 * Math.pow(18, i) * Math.pow(FLOOR_GROWTH, level - 1);
-/** Produção em carga/segundo. */
+/** Produção legal em carga/segundo. */
 export const floorRate = (i: number, level: number) => 2 * Math.pow(11, i) * level * milestoneMult(level);
 export const floorCycle = (i: number) => Math.min(1.5 + 0.4 * i, 5);
 
@@ -154,17 +190,39 @@ export function globalMult(s: GameState): number {
   return (1 + CHIP_BONUS * s.chips) * (hackActive(s) ? s.hackMult : 1);
 }
 
+export function heatUnlocked(s: GameState): boolean {
+  return s.floors.length >= HEAT_UNLOCK_FLOORS;
+}
+/** Piso ilegal fechado pela polícia depois de uma rusga perdida. */
+export function isSealed(s: GameState, i: number): boolean {
+  return !!s.floors[i].illegal && s.clock < s.sealedUntil;
+}
+/** Produção real do piso, já com o modo ilegal. */
+export function floorOutput(s: GameState, i: number): number {
+  const f = s.floors[i];
+  return floorRate(i, f.level) * (f.illegal ? ILLEGAL_MULT : 1);
+}
+
 /** Débitos teóricos (carga/s) de cada etapa; o mínimo é o gargalo. */
 export function flow(s: GameState) {
   let floors = 0;
   s.floors.forEach((f, i) => {
-    if (f.manager) floors += floorRate(i, f.level) * speed(s, 'f' + i);
+    if (f.manager && !isSealed(s, i)) floors += floorOutput(s, i) * speed(s, 'f' + i);
   });
   const elev = elevRate(s.elev.level) * speed(s, 'elev');
   const term = termRate(s.term.level) * speed(s, 'term');
   const chain = Math.min(floors, elev, term);
   const bottleneck: 'floors' | 'elev' | 'term' = chain === floors ? 'floors' : chain === elev ? 'elev' : 'term';
   return { floors, elev, term, chain, bottleneck };
+}
+
+/** Variação do Heat por segundo com a configuração actual. */
+export function heatRate(s: GameState): number {
+  let n = 0;
+  s.floors.forEach((f, i) => {
+    if (f.illegal && f.manager && !isSealed(s, i)) n++;
+  });
+  return n * HEAT_PER_FLOOR - HEAT_DECAY;
 }
 
 export function chipsOnReboot(s: GameState): number {
@@ -219,7 +277,10 @@ export function unlockFloor(s: GameState): boolean {
 export function tap(s: GameState, key: StationKey): void {
   if (key === 'elev') s.elev.queued = true;
   else if (key === 'term') s.term.queued = true;
-  else s.floors[Number(key.slice(1))].working = true;
+  else {
+    const i = Number(key.slice(1));
+    if (!isSealed(s, i)) s.floors[i].working = true;
+  }
 }
 
 export function overclock(s: GameState, key: StationKey): boolean {
@@ -234,6 +295,44 @@ function earn(s: GameState, amount: number): void {
   s.credits += amount;
   s.runEarned += amount;
   s.totalEarned += amount;
+}
+
+/** Liga ou desliga o modo ilegal de um piso (produção x3, sobe o Heat). */
+export function toggleIllegal(s: GameState, i: number): boolean {
+  if (!heatUnlocked(s) || isSealed(s, i)) return false;
+  s.floors[i].illegal = !s.floors[i].illegal;
+  return true;
+}
+
+export function bribeCost(s: GameState): number {
+  return Math.max(50, 25 * flow(s).chain * (1 + CHIP_BONUS * s.chips));
+}
+/** Suborno: paga para baixar o Heat. Não funciona com a rusga já em curso. */
+export function bribe(s: GameState): boolean {
+  if (s.raid || s.heat <= 0 || !spend(s, bribeCost(s))) return false;
+  s.heat = Math.max(0, s.heat - BRIBE_DROP);
+  return true;
+}
+
+/** O jogador abateu um drone da polícia. */
+export function raidHit(s: GameState): void {
+  if (!s.raid) return;
+  s.raid.left--;
+  if (s.raid.left <= 0) {
+    s.raid = null;
+    s.heat = 45;
+    s.raidsWon++;
+    emit({ type: 'raidWon' });
+  }
+}
+
+function failRaid(s: GameState): void {
+  const lost = s.depot;
+  s.depot = 0;
+  s.raid = null;
+  s.heat = 20;
+  s.sealedUntil = s.clock + SEAL_TIME;
+  emit({ type: 'raidFail', lost });
 }
 
 /** Prémio do mini-jogo de hacking, conforme as rondas ultrapassadas (0 a 3). */
@@ -264,7 +363,7 @@ export function claimDrone(s: GameState): number {
 }
 
 export function reboot(s: GameState): GameState {
-  return newState(s.chips + chipsOnReboot(s), s.totalEarned, s.reboots + 1, s.hacks);
+  return newState(s.chips + chipsOnReboot(s), s.totalEarned, s.reboots + 1, s.hacks, s.raidsWon);
 }
 
 // ---------- Avanço do tempo ----------
@@ -276,13 +375,33 @@ export function tick(s: GameState, dt: number): void {
 
   for (let i = 0; i < n; i++) {
     const f = s.floors[i];
+    if (isSealed(s, i)) {
+      f.working = false;
+      f.progress = 0;
+      continue;
+    }
     if (f.manager) f.working = true;
     if (!f.working) continue;
     f.progress += (dt * speed(s, 'f' + i)) / floorCycle(i);
     if (f.progress >= 1) {
-      f.stock += floorRate(i, f.level) * floorCycle(i);
+      f.stock += floorOutput(s, i) * floorCycle(i);
       f.progress = f.manager ? f.progress - 1 : 0;
       f.working = f.manager;
+      emit({ type: 'cycle', floor: i });
+    }
+  }
+
+  // Heat e rusgas
+  if (s.raid) {
+    s.heat = 100;
+    if (s.clock >= s.raid.until) failRaid(s);
+  } else if (heatUnlocked(s)) {
+    s.heat = Math.max(0, Math.min(100, s.heat + heatRate(s) * dt));
+    if (s.heat >= 100) {
+      const illegal = s.floors.filter((f) => f.illegal).length;
+      const total = Math.min(10, 4 + illegal);
+      s.raid = { until: s.clock + RAID_TIME, left: total, total };
+      emit({ type: 'raidStart' });
     }
   }
 
@@ -312,6 +431,7 @@ export function tick(s: GameState, dt: number): void {
         const take = Math.min(f.stock, cap - e.load);
         f.stock -= take;
         e.load += take;
+        if (take > 0) emit({ type: 'load', floor: e.target });
         if (e.load >= cap * 0.999 || e.target >= n - 1) e.phase = 'down';
         else {
           e.target++;
@@ -330,6 +450,7 @@ export function tick(s: GameState, dt: number): void {
     case 'unload':
       e.timer -= es;
       if (e.timer <= 0) {
+        if (e.load > 0) emit({ type: 'unload' });
         s.depot += e.load;
         e.load = 0;
         e.phase = 'idle';
@@ -355,6 +476,7 @@ export function tick(s: GameState, dt: number): void {
         const gain = t.carry * globalMult(s);
         earn(s, gain);
         s.sold += gain;
+        emit({ type: 'sale', gain });
         t.carry = 0;
         t.phase = 'back';
         t.t = 0;
@@ -372,13 +494,17 @@ export function tick(s: GameState, dt: number): void {
 
 /**
  * Aproxima um período longo sem simular cada passo (jogo fechado ou separador escondido).
- * Só as estações com gestor trabalham. Devolve os créditos ganhos.
+ * Só as estações com gestor trabalham. Sem o jogador a vigiar, os pisos ilegais trabalham
+ * discretamente ao ritmo legal e o Heat só desce. Devolve os créditos ganhos.
  */
 export function simulateOffline(s: GameState, seconds: number): number {
   const sec = Math.max(0, Math.min(seconds, OFFLINE_CAP));
+  if (s.raid) failRaid(s); // ninguém defendeu a torre
+  const sealed = Math.min(sec, Math.max(0, s.sealedUntil - s.clock));
   s.clock += sec;
+  s.heat = Math.max(0, s.heat - HEAT_DECAY * sec);
   s.floors.forEach((f, i) => {
-    if (f.manager) f.stock += floorRate(i, f.level) * sec;
+    if (f.manager) f.stock += floorRate(i, f.level) * (f.illegal ? sec - sealed : sec);
   });
   if (s.elev.manager) {
     let room = elevRate(s.elev.level) * sec;

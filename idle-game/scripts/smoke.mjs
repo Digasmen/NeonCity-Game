@@ -44,8 +44,20 @@ for (const [name, viewport] of sizes) {
   for (const sel of ['.floor .btn.up', '.floor .btn.mgr', '.card .btn.up', '.card .btn.mgr']) {
     for (const b of await page.$$(sel)) await b.click();
   }
+  // Heat: passa dois pisos a ilegal e força uma rusga.
+  const laws = await page.$$('.floor .law');
+  await laws[0].click();
+  await laws[1].click();
   await page.waitForTimeout(6000);
   await page.screenshot({ path: `${out}/${name}-mid.png` });
+  await page.evaluate(() => (window.neon.state.heat = 99.9));
+  await page.waitForSelector('.cop');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${out}/${name}-raid.png` });
+  for (const cop of await page.$$('.cop')) await cop.click({ force: true });
+  await page.waitForTimeout(600);
+  const raid = await page.evaluate(() => ({ raid: window.neon.state.raid, won: window.neon.state.raidsWon }));
+  if (raid.raid || raid.won !== 1) errors.push(`${name}: a rusga não foi repelida`);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   if (overflow) errors.push(`${name}: scroll horizontal`);
 

@@ -83,6 +83,85 @@ describe('cadeia', () => {
   });
 });
 
+describe('heat', () => {
+  function tower() {
+    const s = S.newState();
+    s.floors.push({ level: 1, stock: 0, progress: 0, working: false, manager: true, illegal: false });
+    s.elev.manager = true;
+    s.term.manager = true;
+    return s;
+  }
+
+  it('só existe a partir do segundo piso', () => {
+    const s = S.newState();
+    expect(S.toggleIllegal(s, 0)).toBe(false);
+    expect(S.toggleIllegal(tower(), 0)).toBe(true);
+  });
+
+  it('pisos ilegais produzem mais e sobem o heat até à rusga', () => {
+    const s = tower();
+    const legal = S.flow(s).floors;
+    S.toggleIllegal(s, 0);
+    S.toggleIllegal(s, 1);
+    expect(S.flow(s).floors).toBeCloseTo(legal * S.ILLEGAL_MULT);
+    expect(S.heatRate(s)).toBeGreaterThan(0);
+    run(s, 86);
+    expect(s.raid).not.toBeNull();
+  });
+
+  it('abater todos os drones repele a rusga', () => {
+    const s = tower();
+    S.toggleIllegal(s, 0);
+    s.heat = 99.99;
+    run(s, 1);
+    const n = s.raid!.left;
+    for (let i = 0; i < n; i++) S.raidHit(s);
+    expect(s.raid).toBeNull();
+    expect(s.heat).toBe(45);
+    expect(s.sealedUntil).toBe(0);
+  });
+
+  it('rusga perdida confisca o cais e sela os pisos ilegais', () => {
+    const s = tower();
+    S.toggleIllegal(s, 1);
+    s.heat = 99.99;
+    s.elev.manager = false;
+    run(s, 1);
+    s.depot = 500;
+    s.term.manager = false;
+    run(s, S.RAID_TIME + 1);
+    expect(s.raid).toBeNull();
+    expect(s.depot).toBe(0);
+    expect(S.isSealed(s, 1)).toBe(true);
+    expect(S.isSealed(s, 0)).toBe(false);
+    const before = s.floors[1].stock;
+    run(s, 5);
+    expect(s.floors[1].stock).toBe(before);
+    run(s, S.SEAL_TIME);
+    expect(s.floors[1].stock).toBeGreaterThan(before);
+  });
+
+  it('suborno baixa o heat e custa créditos', () => {
+    const s = tower();
+    s.heat = 60;
+    expect(S.bribe(s)).toBe(false);
+    s.credits = 1e6;
+    expect(S.bribe(s)).toBe(true);
+    expect(s.heat).toBe(60 - S.BRIBE_DROP);
+    expect(s.credits).toBeLessThan(1e6);
+  });
+
+  it('offline o heat só desce e não há rusgas', () => {
+    const s = tower();
+    S.toggleIllegal(s, 0);
+    S.toggleIllegal(s, 1);
+    s.heat = 90;
+    S.simulateOffline(s, 3600);
+    expect(s.heat).toBe(0);
+    expect(s.raid).toBeNull();
+  });
+});
+
 describe('ritmo de progressão (bot ganancioso)', () => {
   it('desbloqueia vários pisos na primeira hora', () => {
     const s = S.newState();
